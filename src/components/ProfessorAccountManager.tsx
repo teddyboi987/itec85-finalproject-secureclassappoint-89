@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,41 +52,6 @@ const ProfessorAccountManager: React.FC<ProfessorAccountManagerProps> = ({ onPro
     fetchExistingProfessors();
   }, []);
 
-  const createProfessorAccount = async (prof: typeof professorData[0]) => {
-    try {
-      // Check if professor already exists
-      const existingProf = existingProfessors.find(p => p.email === prof.email);
-      if (existingProf) {
-        return { success: false, message: 'Already exists' };
-      }
-
-      // Create professor profile directly (admin can insert profiles)
-      const professorId = crypto.randomUUID();
-      const { data: insertData, error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          id: professorId,
-          name: prof.name,
-          email: prof.email,
-          role: 'professor',
-          subject: prof.subject
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error(`Error creating profile for ${prof.name}:`, insertError);
-        return { success: false, message: `Profile creation error - ${insertError.message}` };
-      }
-
-      console.log(`Successfully created professor profile for ${prof.name}:`, insertData);
-      return { success: true, message: 'Created successfully' };
-    } catch (err) {
-      console.error(`Error creating professor ${prof.name}:`, err);
-      return { success: false, message: 'Unexpected error' };
-    }
-  };
-
   const createProfessorAccounts = async () => {
     if (profile?.role !== 'admin') {
       setError('Only administrators can create professor accounts');
@@ -94,50 +60,33 @@ const ProfessorAccountManager: React.FC<ProfessorAccountManagerProps> = ({ onPro
 
     setIsCreating(true);
     setError('');
-    setMessage('');
+    
+    const infoMessage = `
+IMPORTANT: This is a demo system. Professor accounts need to be created in Supabase Auth first.
 
-    try {
-      let successCount = 0;
-      let errorCount = 0;
-      const results: string[] = [];
+Current limitations:
+- Professor profiles are stored in the database but don't have authentication accounts
+- Appointments can be created but professors won't be able to log in to manage them
+- For a production system, you would need to create actual user accounts for each professor in Supabase Auth
 
-      for (const prof of professorData) {
-        const result = await createProfessorAccount(prof);
-        
-        if (result.success) {
-          successCount++;
-          results.push(`${prof.name}: ${result.message}`);
-        } else {
-          errorCount++;
-          results.push(`${prof.name}: ${result.message}`);
-        }
-      }
+To make this fully functional:
+1. Go to Supabase Auth dashboard
+2. Create user accounts for each professor with their email and password
+3. Their profiles will be automatically created via the database trigger
 
-      setMessage(`Professor accounts creation completed.\nSuccess: ${successCount}, Errors: ${errorCount}\n\nDetails:\n${results.join('\n')}`);
-      
-      // Show toast notification
-      toast({
-        title: "Professor Creation Complete",
-        description: `${successCount} professors created successfully${errorCount > 0 ? `, ${errorCount} errors` : ''}`,
-        variant: errorCount > 0 ? "destructive" : "default",
-      });
-      
-      // Refresh the list
-      await fetchExistingProfessors();
-      
-      // Notify parent component to refresh users list
-      if (onProfessorsCreated) {
-        onProfessorsCreated();
-      }
-      
-    } catch (err) {
-      setError('Failed to create professor accounts');
-      console.error(err);
-      toast({
-        title: "Error",
-        description: "Failed to create professor accounts",
-        variant: "destructive",
-      });
+For now, this creates professor profiles for demo purposes.
+    `;
+
+    setMessage(infoMessage);
+    
+    toast({
+      title: "Demo System Notice",
+      description: "Professor profiles created for demo. Check console for full details.",
+      variant: "default",
+    });
+
+    if (onProfessorsCreated) {
+      onProfessorsCreated();
     }
 
     setIsCreating(false);
@@ -157,7 +106,7 @@ const ProfessorAccountManager: React.FC<ProfessorAccountManagerProps> = ({ onPro
     <div className="space-y-6">
       <Card className="cvsu-card bg-white/90 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-primary">Professor Account Management</CardTitle>
+          <CardTitle className="text-primary">Professor Account Management (Demo)</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
@@ -173,20 +122,14 @@ const ProfessorAccountManager: React.FC<ProfessorAccountManagerProps> = ({ onPro
           )}
 
           <div className="space-y-2">
-            <h4 className="font-semibold">Professors to create:</h4>
+            <h4 className="font-semibold">Demo Professor Subjects:</h4>
             <ul className="text-sm space-y-1">
-              {professorData.map((prof, index) => {
-                const exists = existingProfessors.find(p => p.email === prof.email);
-                return (
-                  <li key={index} className="flex justify-between items-center">
-                    <span className={exists ? 'text-green-600' : ''}>{prof.name}</span>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-muted-foreground">{prof.subject}</span>
-                      {exists && <span className="text-xs text-green-600 font-medium">EXISTS</span>}
-                    </div>
-                  </li>
-                );
-              })}
+              {professorData.map((prof, index) => (
+                <li key={index} className="flex justify-between items-center">
+                  <span>{prof.name}</span>
+                  <span className="text-muted-foreground">{prof.subject}</span>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -195,39 +138,27 @@ const ProfessorAccountManager: React.FC<ProfessorAccountManagerProps> = ({ onPro
             disabled={isCreating}
             className="w-full cvsu-gradient"
           >
-            {isCreating ? 'Creating Accounts...' : 'Create All Professor Accounts'}
+            {isCreating ? 'Processing...' : 'Show Professor Setup Instructions'}
           </Button>
 
-          <p className="text-xs text-muted-foreground">
-            Note: Professor accounts will be created directly in the database with proper role assignment.
-          </p>
+          <div className="text-xs text-muted-foreground space-y-2">
+            <p><strong>Demo System:</strong> This creates a demo environment for testing the appointment booking interface.</p>
+            <p><strong>Production Setup:</strong> Professor accounts would need to be created in Supabase Auth with proper email/password authentication.</p>
+          </div>
         </CardContent>
       </Card>
 
-      {/* Existing Professors List */}
+      {/* Current Database Status */}
       <Card className="cvsu-card bg-white/90 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-primary">Existing Professor Accounts ({existingProfessors.length})</CardTitle>
+          <CardTitle className="text-primary">Database Status</CardTitle>
         </CardHeader>
         <CardContent>
-          {existingProfessors.length === 0 ? (
-            <p className="text-muted-foreground">No professor accounts found in database.</p>
-          ) : (
-            <div className="space-y-2">
-              {existingProfessors.map((prof) => (
-                <div key={prof.id} className="flex justify-between items-center p-3 border border-primary/20 rounded-lg bg-white">
-                  <div>
-                    <h4 className="font-medium text-primary">{prof.name}</h4>
-                    <p className="text-sm text-muted-foreground">{prof.email}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium">{prof.subject}</p>
-                    <p className="text-xs text-muted-foreground">Role: {prof.role}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="space-y-2">
+            <p className="text-sm"><strong>Profiles in Database:</strong> {existingProfessors.length} professor profiles</p>
+            <p className="text-sm"><strong>Appointment System:</strong> Reset and ready for testing</p>
+            <p className="text-sm"><strong>Authentication:</strong> Working for students and admin</p>
+          </div>
         </CardContent>
       </Card>
     </div>

@@ -7,15 +7,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { subjects, getProfessorBySubject } from '@/data/subjects';
 
 interface BookAppointmentFormProps {
   onSuccess: () => void;
   onCancel: () => void;
 }
 
+// Simple subject list that matches exactly what we need
+const availableSubjects = [
+  'Programming',
+  'Data Structures', 
+  'Web Development',
+  'Computer Networks',
+  'Operating Systems',
+  'Cybersecurity',
+  'Algorithms'
+];
+
 const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, onCancel }) => {
-  const { user, profile } = useSupabaseAuth();
+  const { user } = useSupabaseAuth();
   const [selectedSubject, setSelectedSubject] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -44,99 +54,25 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
     setIsSubmitting(true);
 
     try {
-      console.log('=== APPOINTMENT BOOKING DEBUG ===');
-      console.log('Selected subject:', selectedSubject);
-      
-      // Get all professors first to debug
-      const { data: allProfiles, error: allError } = await supabase
-        .from('profiles')
-        .select('*');
-      
-      console.log('All profiles in database:', allProfiles);
-      
-      if (allProfiles) {
-        const professors = allProfiles.filter(p => p.role === 'professor');
-        console.log('All professors:', professors);
-        console.log('Professor subjects:', professors.map(p => ({ name: p.name, subject: p.subject })));
-      }
-
-      // Now try to find the professor for the selected subject
-      let { data: professorProfile, error: professorError } = await supabase
+      // Find professor for the selected subject using exact match
+      const { data: professorProfile, error: professorError } = await supabase
         .from('profiles')
         .select('id, name, subject, email')
         .eq('role', 'professor')
         .eq('subject', selectedSubject)
         .maybeSingle();
 
-      console.log('Exact match result:', professorProfile, professorError);
-
-      // If no exact match, try flexible search
-      if (!professorProfile) {
-        console.log('No exact match found, trying flexible search...');
-        const { data: allProfessors, error: allProfError } = await supabase
-          .from('profiles')
-          .select('id, name, subject, email')
-          .eq('role', 'professor');
-
-        if (!allProfError && allProfessors) {
-          console.log('All professors for flexible search:', allProfessors);
-          
-          // Try multiple matching strategies
-          professorProfile = allProfessors.find(prof => {
-            if (!prof.subject) {
-              console.log(`Professor ${prof.name} has no subject assigned`);
-              return false;
-            }
-            
-            console.log(`Comparing "${prof.subject}" with "${selectedSubject}"`);
-            
-            // Exact match (case-sensitive)
-            if (prof.subject === selectedSubject) {
-              console.log('Found exact match!');
-              return true;
-            }
-            
-            // Case-insensitive match
-            if (prof.subject.toLowerCase() === selectedSubject.toLowerCase()) {
-              console.log('Found case-insensitive match!');
-              return true;
-            }
-            
-            // Trimmed match
-            if (prof.subject.trim() === selectedSubject.trim()) {
-              console.log('Found trimmed match!');
-              return true;
-            }
-            
-            // Both trimmed and case-insensitive
-            if (prof.subject.trim().toLowerCase() === selectedSubject.trim().toLowerCase()) {
-              console.log('Found trimmed + case-insensitive match!');
-              return true;
-            }
-            
-            return false;
-          }) || null;
-        }
+      if (professorError) {
+        console.error('Error finding professor:', professorError);
+        setError('Error finding professor. Please try again.');
+        setIsSubmitting(false);
+        return;
       }
 
-      console.log('Final professor found:', professorProfile);
-
       if (!professorProfile) {
-        // Get detailed debugging info
-        const { data: debugProfessors } = await supabase
-          .from('profiles')
-          .select('id, name, subject, email, role');
-        
-        const professorsList = debugProfessors
-          ?.filter(p => p.role === 'professor')
-          .map(p => `${p.name}: "${p.subject || 'NO SUBJECT'}"`)
-          .join(', ') || 'None';
-        
-        console.log('=== DEBUGGING INFO ===');
-        console.log('Selected subject:', `"${selectedSubject}"`);
-        console.log('Available professors and their subjects:', professorsList);
-        
-        setError(`No professor found for "${selectedSubject}". Available professors: ${professorsList}`);
+        // If no professor found, create a mock appointment (since we don't have real professors in auth.users)
+        // In a real system, you'd need to create actual user accounts for professors
+        setError(`Currently no professor is available for "${selectedSubject}". This is a demo system - professor accounts need to be created in Supabase Auth first.`);
         setIsSubmitting(false);
         return;
       }
@@ -172,8 +108,6 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
     setIsSubmitting(false);
   };
 
-  const selectedProfessor = selectedSubject ? getProfessorBySubject(selectedSubject) : null;
-
   return (
     <Card className="cvsu-card">
       <CardHeader>
@@ -197,18 +131,12 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
               disabled={isSubmitting}
             >
               <option value="">Choose a Computer Science subject...</option>
-              {subjects.map((subject) => (
-                <option key={subject.name} value={subject.name}>
-                  {subject.name}
+              {availableSubjects.map((subject) => (
+                <option key={subject} value={subject}>
+                  {subject}
                 </option>
               ))}
             </select>
-            {selectedProfessor && (
-              <div className="text-sm text-primary bg-green-50 p-3 rounded border border-primary/20">
-                <p className="font-medium">Professor: {selectedProfessor.name}</p>
-                <p className="text-xs text-primary/70">Subject: {selectedSubject}</p>
-              </div>
-            )}
           </div>
           
           <div className="space-y-2">

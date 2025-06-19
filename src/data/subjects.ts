@@ -1,14 +1,15 @@
 
 import { Subject, Professor } from '@/types/auth';
 
+// Demo professor data - these would normally be real user accounts in Supabase Auth
 export const professors: Professor[] = [
-  { id: '2', name: 'Prof. Santos', subject: 'Programming' },
-  { id: '5', name: 'Prof. Reyes', subject: 'Data Structures' },
-  { id: '6', name: 'Prof. Cruz', subject: 'Web Development' },
-  { id: '7', name: 'Prof. Dela Peña', subject: 'Computer Networks' },
-  { id: '8', name: 'Prof. Garcia', subject: 'Operating Systems' },
-  { id: '9', name: 'Prof. Ramos', subject: 'Cybersecurity' },
-  { id: '10', name: 'Prof. Lim', subject: 'Algorithms' },
+  { id: 'demo-1', name: 'Prof. Santos', subject: 'Programming' },
+  { id: 'demo-2', name: 'Prof. Reyes', subject: 'Data Structures' },
+  { id: 'demo-3', name: 'Prof. Cruz', subject: 'Web Development' },
+  { id: 'demo-4', name: 'Prof. Dela Peña', subject: 'Computer Networks' },
+  { id: 'demo-5', name: 'Prof. Garcia', subject: 'Operating Systems' },
+  { id: 'demo-6', name: 'Prof. Ramos', subject: 'Cybersecurity' },
+  { id: 'demo-7', name: 'Prof. Lim', subject: 'Algorithms' },
 ];
 
 export const subjects: Subject[] = [
