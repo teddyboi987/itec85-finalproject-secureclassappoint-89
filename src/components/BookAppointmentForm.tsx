@@ -44,9 +44,9 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
     setIsSubmitting(true);
 
     try {
-      // First, let's try to find professor by exact subject match
       console.log('Looking for professor with subject:', selectedSubject);
       
+      // First try exact match
       let { data: professorProfile, error: professorError } = await supabase
         .from('profiles')
         .select('id, name, subject, email')
@@ -54,37 +54,60 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
         .eq('subject', selectedSubject)
         .maybeSingle();
 
-      // If no exact match, try case-insensitive search
+      console.log('Exact match result:', professorProfile, professorError);
+
+      // If no exact match, try case-insensitive and trimmed search
       if (!professorProfile) {
-        console.log('No exact match found, trying case-insensitive search...');
+        console.log('No exact match found, trying flexible search...');
         const { data: allProfessors, error: allProfError } = await supabase
           .from('profiles')
           .select('id, name, subject, email')
           .eq('role', 'professor');
 
+        console.log('All professors in database:', allProfessors);
+
         if (!allProfError && allProfessors) {
-          professorProfile = allProfessors.find(prof => 
-            prof.subject?.toLowerCase() === selectedSubject.toLowerCase()
-          ) || null;
+          // Try multiple matching strategies
+          professorProfile = allProfessors.find(prof => {
+            if (!prof.subject) return false;
+            
+            // Exact match (case-sensitive)
+            if (prof.subject === selectedSubject) return true;
+            
+            // Case-insensitive match
+            if (prof.subject.toLowerCase() === selectedSubject.toLowerCase()) return true;
+            
+            // Trimmed match
+            if (prof.subject.trim() === selectedSubject.trim()) return true;
+            
+            // Both trimmed and case-insensitive
+            if (prof.subject.trim().toLowerCase() === selectedSubject.trim().toLowerCase()) return true;
+            
+            return false;
+          }) || null;
         }
       }
 
-      // If still no professor found, let's debug what's available
+      console.log('Final professor found:', professorProfile);
+
       if (!professorProfile) {
-        console.log('Still no professor found, checking all professors in database...');
-        const { data: debugProfessors, error: debugError } = await supabase
+        // Get all professors for debugging
+        const { data: debugProfessors } = await supabase
           .from('profiles')
           .select('id, name, subject, email, role');
         
-        console.log('All profiles in database:', debugProfessors);
-        console.log('Profiles with professor role:', debugProfessors?.filter(p => p.role === 'professor'));
+        const professorSubjects = debugProfessors
+          ?.filter(p => p.role === 'professor')
+          .map(p => `"${p.subject}"`)
+          .join(', ') || 'None';
         
-        setError(`No professor found for ${selectedSubject}. Available professors: ${debugProfessors?.filter(p => p.role === 'professor').map(p => p.subject).join(', ') || 'None'}`);
+        console.log('Debug - All profiles:', debugProfessors);
+        console.log('Debug - Professor subjects:', professorSubjects);
+        
+        setError(`No professor found for "${selectedSubject}". Available professor subjects in database: ${professorSubjects}`);
         setIsSubmitting(false);
         return;
       }
-
-      console.log('Found professor:', professorProfile);
 
       // Create appointment in database
       const { data: appointment, error: appointmentError } = await supabase
