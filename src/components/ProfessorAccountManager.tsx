@@ -56,26 +56,8 @@ const ProfessorAccountManager: React.FC = () => {
         return { success: false, message: 'Already exists' };
       }
 
-      // Create the profile directly in the database
-      const { data: insertData, error: insertError } = await supabase
-        .from('profiles')
-        .insert({
-          id: crypto.randomUUID(),
-          name: prof.name,
-          email: prof.email,
-          role: 'professor',
-          subject: prof.subject
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error(`Error creating profile for ${prof.name}:`, insertError);
-        return { success: false, message: `Profile creation error - ${insertError.message}` };
-      }
-
-      // Try to create auth user (this might fail due to email rate limits, but profile creation should still work)
-      const { error: signUpError } = await supabase.auth.signUp({
+      // First try to create the auth user
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: prof.email,
         password: 'prof123',
         options: {
@@ -85,12 +67,64 @@ const ProfessorAccountManager: React.FC = () => {
         }
       });
 
-      if (signUpError && !signUpError.message.includes('rate limit')) {
-        console.error(`Auth error for ${prof.name}:`, signUpError);
-        // Don't fail completely, as the profile was created
+      // Handle rate limit errors gracefully
+      if (signUpError && signUpError.message.includes('rate limit')) {
+        console.log(`Rate limit hit for ${prof.name}, creating profile directly`);
+        
+        // Create profile directly with a generated UUID since auth signup was rate limited
+        const userId = crypto.randomUUID();
+        const { data: insertData, error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: userId,
+            name: prof.name,
+            email: prof.email,
+            role: 'professor',
+            subject: prof.subject
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error(`Error creating profile for ${prof.name}:`, insertError);
+          return { success: false, message: `Profile creation error - ${insertError.message}` };
+        }
+
+        return { success: true, message: 'Created successfully (profile only due to rate limit)' };
       }
 
-      return { success: true, message: 'Created successfully' };
+      // If auth signup failed for other reasons
+      if (signUpError && !signUpError.message.includes('User already registered')) {
+        console.error(`Auth signup error for ${prof.name}:`, signUpError);
+        return { success: false, message: `Auth error - ${signUpError.message}` };
+      }
+
+      // If auth user was created successfully or already exists, ensure profile exists
+      if (authData.user || signUpError?.message.includes('User already registered')) {
+        const userId = authData.user?.id || crypto.randomUUID();
+        
+        // Create or update the profile with professor role
+        const { data: insertData, error: insertError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: userId,
+            name: prof.name,
+            email: prof.email,
+            role: 'professor',
+            subject: prof.subject
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          console.error(`Error upserting profile for ${prof.name}:`, insertError);
+          return { success: false, message: `Profile creation error - ${insertError.message}` };
+        }
+
+        return { success: true, message: 'Created successfully' };
+      }
+
+      return { success: false, message: 'Unknown error occurred' };
     } catch (err) {
       console.error(`Error creating professor ${prof.name}:`, err);
       return { success: false, message: 'Unexpected error' };
@@ -129,7 +163,8 @@ const ProfessorAccountManager: React.FC = () => {
       // Show toast notification
       toast({
         title: "Professor Creation Complete",
-        description: `${successCount} professors created successfully`,
+        description: `${successCount} professors created successfully${errorCount > 0 ? `, ${errorCount} errors` : ''}`,
+        variant: errorCount > 0 ? "destructive" : "default",
       });
       
       // Refresh the list
@@ -205,7 +240,7 @@ const ProfessorAccountManager: React.FC = () => {
 
           <p className="text-xs text-muted-foreground">
             Default password for all professors: prof123<br/>
-            Note: Professors will be created in the database immediately. Email confirmation may be required for full access.
+            Note: Professors will be created with proper role assignment. Auth accounts may be rate-limited but profiles will still be created.
           </p>
         </CardContent>
       </Card>
@@ -228,7 +263,7 @@ const ProfessorAccountManager: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <p className="text-sm font-medium">{prof.subject}</p>
-                    <p className="text-xs text-muted-foreground">ID: {prof.id.slice(0, 8)}...</p>
+                    <p className="text-xs text-muted-foreground">Role: {prof.role}</p>
                   </div>
                 </div>
               ))}
