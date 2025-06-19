@@ -44,9 +44,23 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
     setIsSubmitting(true);
 
     try {
-      console.log('Looking for professor with subject:', selectedSubject);
+      console.log('=== APPOINTMENT BOOKING DEBUG ===');
+      console.log('Selected subject:', selectedSubject);
       
-      // First try exact match
+      // Get all professors first to debug
+      const { data: allProfiles, error: allError } = await supabase
+        .from('profiles')
+        .select('*');
+      
+      console.log('All profiles in database:', allProfiles);
+      
+      if (allProfiles) {
+        const professors = allProfiles.filter(p => p.role === 'professor');
+        console.log('All professors:', professors);
+        console.log('Professor subjects:', professors.map(p => ({ name: p.name, subject: p.subject })));
+      }
+
+      // Now try to find the professor for the selected subject
       let { data: professorProfile, error: professorError } = await supabase
         .from('profiles')
         .select('id, name, subject, email')
@@ -56,7 +70,7 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
 
       console.log('Exact match result:', professorProfile, professorError);
 
-      // If no exact match, try case-insensitive and trimmed search
+      // If no exact match, try flexible search
       if (!professorProfile) {
         console.log('No exact match found, trying flexible search...');
         const { data: allProfessors, error: allProfError } = await supabase
@@ -64,24 +78,41 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
           .select('id, name, subject, email')
           .eq('role', 'professor');
 
-        console.log('All professors in database:', allProfessors);
-
         if (!allProfError && allProfessors) {
+          console.log('All professors for flexible search:', allProfessors);
+          
           // Try multiple matching strategies
           professorProfile = allProfessors.find(prof => {
-            if (!prof.subject) return false;
+            if (!prof.subject) {
+              console.log(`Professor ${prof.name} has no subject assigned`);
+              return false;
+            }
+            
+            console.log(`Comparing "${prof.subject}" with "${selectedSubject}"`);
             
             // Exact match (case-sensitive)
-            if (prof.subject === selectedSubject) return true;
+            if (prof.subject === selectedSubject) {
+              console.log('Found exact match!');
+              return true;
+            }
             
             // Case-insensitive match
-            if (prof.subject.toLowerCase() === selectedSubject.toLowerCase()) return true;
+            if (prof.subject.toLowerCase() === selectedSubject.toLowerCase()) {
+              console.log('Found case-insensitive match!');
+              return true;
+            }
             
             // Trimmed match
-            if (prof.subject.trim() === selectedSubject.trim()) return true;
+            if (prof.subject.trim() === selectedSubject.trim()) {
+              console.log('Found trimmed match!');
+              return true;
+            }
             
             // Both trimmed and case-insensitive
-            if (prof.subject.trim().toLowerCase() === selectedSubject.trim().toLowerCase()) return true;
+            if (prof.subject.trim().toLowerCase() === selectedSubject.trim().toLowerCase()) {
+              console.log('Found trimmed + case-insensitive match!');
+              return true;
+            }
             
             return false;
           }) || null;
@@ -91,20 +122,21 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
       console.log('Final professor found:', professorProfile);
 
       if (!professorProfile) {
-        // Get all professors for debugging
+        // Get detailed debugging info
         const { data: debugProfessors } = await supabase
           .from('profiles')
           .select('id, name, subject, email, role');
         
-        const professorSubjects = debugProfessors
+        const professorsList = debugProfessors
           ?.filter(p => p.role === 'professor')
-          .map(p => `"${p.subject}"`)
+          .map(p => `${p.name}: "${p.subject || 'NO SUBJECT'}"`)
           .join(', ') || 'None';
         
-        console.log('Debug - All profiles:', debugProfessors);
-        console.log('Debug - Professor subjects:', professorSubjects);
+        console.log('=== DEBUGGING INFO ===');
+        console.log('Selected subject:', `"${selectedSubject}"`);
+        console.log('Available professors and their subjects:', professorsList);
         
-        setError(`No professor found for "${selectedSubject}". Available professor subjects in database: ${professorSubjects}`);
+        setError(`No professor found for "${selectedSubject}". Available professors: ${professorsList}`);
         setIsSubmitting(false);
         return;
       }
