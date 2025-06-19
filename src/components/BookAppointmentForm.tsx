@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface BookAppointmentFormProps {
   onSuccess: () => void;
@@ -22,6 +23,7 @@ interface Professor {
 
 const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, onCancel }) => {
   const { user } = useSupabaseAuth();
+  const { toast } = useToast();
   const [professors, setProfessors] = useState<Professor[]>([]);
   const [selectedProfessor, setSelectedProfessor] = useState('');
   const [date, setDate] = useState('');
@@ -34,6 +36,7 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
   useEffect(() => {
     const fetchProfessors = async () => {
       try {
+        console.log('Fetching professors from database...');
         const { data, error } = await supabase
           .from('profiles')
           .select('id, name, email, subject')
@@ -47,7 +50,7 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
           return;
         }
 
-        console.log('Fetched professors:', data);
+        console.log('Fetched professors from database:', data);
         setProfessors(data || []);
       } catch (err) {
         console.error('Unexpected error fetching professors:', err);
@@ -115,6 +118,12 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
       }
 
       console.log('Appointment created successfully:', appointment);
+      
+      toast({
+        title: "Appointment Booked!",
+        description: `Your appointment with ${professor.name} for ${professor.subject} has been requested.`,
+      });
+
       onSuccess();
     } catch (err) {
       console.error('Unexpected error:', err);
@@ -167,9 +176,11 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
               ))}
             </select>
             {professors.length === 0 && (
-              <p className="text-sm text-muted-foreground">
-                No professors available. Please contact the administrator.
-              </p>
+              <Alert>
+                <AlertDescription>
+                  No professors are currently available in the database. Please contact the administrator to add professor accounts.
+                </AlertDescription>
+              </Alert>
             )}
           </div>
           
