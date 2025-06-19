@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { GraduationCap } from 'lucide-react';
 import BookAppointmentForm from './BookAppointmentForm';
@@ -11,18 +12,15 @@ import { useAppointments } from '@/hooks/useAppointments';
 const StudentDashboard: React.FC = () => {
   const { user } = useSupabaseAuth();
   const [showBookingForm, setShowBookingForm] = useState(false);
-  const [statsRefreshKey, setStatsRefreshKey] = useState(0);
   const { appointments, isLoading, refetchAppointments } = useAppointments(user?.id);
 
   const handleBookingSuccess = () => {
     setShowBookingForm(false);
     refetchAppointments();
-    setStatsRefreshKey(prev => prev + 1); // Force stats refresh
   };
 
   const handleAppointmentDeleted = () => {
     refetchAppointments();
-    setStatsRefreshKey(prev => prev + 1); // Force stats refresh
   };
 
   if (isLoading) {
@@ -51,10 +49,7 @@ const StudentDashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <QuickActions onBookAppointment={() => setShowBookingForm(true)} />
-          <AppointmentStats 
-            appointments={appointments} 
-            refreshKey={statsRefreshKey}
-          />
+          <AppointmentStats appointments={appointments} />
           <RecentActivity appointments={appointments} />
         </div>
 

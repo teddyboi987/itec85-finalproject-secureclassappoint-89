@@ -31,14 +31,13 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
     try {
       console.log('Fetching appointments for professor subject:', professorSubject);
       
-      // Fetch appointments where the subject contains the professor's subject
+      // Fetch all appointments and filter on the client side for more accurate matching
       const { data, error } = await supabase
         .from('appointments')
         .select(`
           *,
           student_profile:profiles!appointments_student_id_fkey(name)
         `)
-        .ilike('subject', `%${professorSubject}%`)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -51,16 +50,20 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         return;
       }
 
-      console.log('Fetched professor appointments:', data);
-      console.log('Total appointments found:', data?.length || 0);
+      console.log('All appointments fetched:', data);
       
-      // Log each appointment's subject for debugging
-      data?.forEach(apt => {
-        console.log(`Appointment subject: "${apt.subject}" contains "${professorSubject}":`, 
-          apt.subject.toLowerCase().includes(professorSubject.toLowerCase()));
-      });
+      // Filter appointments that match the professor's subject
+      // The subject format is: "Mathematics (Prof. Dr. John Smith)"
+      const filteredAppointments = data?.filter(appointment => {
+        const subjectMatch = appointment.subject.toLowerCase().includes(professorSubject.toLowerCase());
+        console.log(`Checking appointment: "${appointment.subject}" contains "${professorSubject}":`, subjectMatch);
+        return subjectMatch;
+      }) || [];
 
-      setAppointments(data || []);
+      console.log('Filtered appointments for professor:', filteredAppointments);
+      console.log('Total filtered appointments:', filteredAppointments.length);
+
+      setAppointments(filteredAppointments);
     } catch (err) {
       console.error('Unexpected error fetching appointments:', err);
       toast({
