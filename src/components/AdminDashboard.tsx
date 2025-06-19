@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield } from 'lucide-react';
@@ -7,17 +6,10 @@ import DashboardStats from './DashboardStats';
 import UsersList from './UsersList';
 import SubjectsList from './SubjectsList';
 import ProfessorAccountManager from './ProfessorAccountManager';
-
-interface DatabaseUser {
-  id: string;
-  name: string;
-  email: string;
-  role: 'student' | 'professor' | 'admin';
-  subject?: string;
-}
+import { User } from '@/types/auth';
 
 const AdminDashboard: React.FC = () => {
-  const [users, setUsers] = useState<DatabaseUser[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUsers = async () => {
@@ -33,7 +25,17 @@ const AdminDashboard: React.FC = () => {
       }
 
       console.log('Fetched users from database:', data);
-      setUsers(data || []);
+      
+      // Type the data properly to match User interface
+      const typedUsers: User[] = (data || []).map(profile => ({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        role: profile.role as 'student' | 'professor' | 'admin',
+        subject: profile.subject || undefined
+      }));
+      
+      setUsers(typedUsers);
     } catch (err) {
       console.error('Unexpected error fetching users:', err);
     } finally {
