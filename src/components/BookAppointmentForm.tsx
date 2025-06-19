@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,7 +51,19 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
         }
 
         console.log('Fetched professors from database:', data);
-        setProfessors(data || []);
+        
+        // Filter out professors without subjects and map to our interface
+        const validProfessors = (data || [])
+          .filter(prof => prof.subject && prof.subject.trim() !== '')
+          .map(prof => ({
+            id: prof.id,
+            name: prof.name,
+            email: prof.email,
+            subject: prof.subject!
+          }));
+        
+        console.log('Valid professors with subjects:', validProfessors);
+        setProfessors(validProfessors);
       } catch (err) {
         console.error('Unexpected error fetching professors:', err);
         setError('Failed to load professors. Please try again.');
@@ -177,7 +190,7 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
             {professors.length === 0 && (
               <Alert>
                 <AlertDescription>
-                  No professors are currently available in the database. Please contact the administrator to add professor accounts.
+                  No professors are currently available in the database. Please contact the administrator to add professor accounts with subjects assigned.
                 </AlertDescription>
               </Alert>
             )}
