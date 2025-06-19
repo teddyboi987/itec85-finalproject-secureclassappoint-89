@@ -24,7 +24,7 @@ interface Professor {
 const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, onCancel }) => {
   const { user } = useSupabaseAuth();
   const { toast } = useToast();
-  const [professors, setProfessors] = useState<Professor[]>([]);
+  const [professors, setProfessors] = useState<professor[]>([]);
   const [selectedProfessor, setSelectedProfessor] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
