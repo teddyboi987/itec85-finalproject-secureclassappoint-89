@@ -15,7 +15,7 @@ interface BookAppointmentFormProps {
 }
 
 const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, onCancel }) => {
-  const { user } = useSupabaseAuth();
+  const { user, profile } = useSupabaseAuth();
   const [selectedSubject, setSelectedSubject] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -60,7 +60,7 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
       id: Date.now().toString(),
       studentId: user!.id,
       professorId: professor.id,
-      studentName: user!.name,
+      studentName: profile?.name || 'Student',
       professorName: professor.name,
       subject: selectedSubject, // This ensures the correct subject is stored
       date,
