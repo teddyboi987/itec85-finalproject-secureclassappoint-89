@@ -60,6 +60,30 @@ export type Database = {
           },
         ]
       }
+      approved_professors: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          name: string
+          subject: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          name: string
+          subject: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          name?: string
+          subject?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string | null
