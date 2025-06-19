@@ -7,6 +7,7 @@ import { Calendar, Clock, BookOpen, Plus, GraduationCap } from 'lucide-react';
 import BookAppointmentForm from './BookAppointmentForm';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { professors } from '@/data/subjects';
 
 interface DatabaseAppointment {
   id: string;
@@ -17,9 +18,6 @@ interface DatabaseAppointment {
   time: string;
   status: string;
   created_at: string;
-  professor_profile?: {
-    name: string;
-  };
 }
 
 const StudentDashboard: React.FC = () => {
@@ -34,10 +32,7 @@ const StudentDashboard: React.FC = () => {
     try {
       const { data, error } = await supabase
         .from('appointments')
-        .select(`
-          *,
-          professor_profile:profiles!appointments_professor_id_fkey(name)
-        `)
+        .select('*')
         .eq('student_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -70,6 +65,11 @@ const StudentDashboard: React.FC = () => {
       case 'rejected': return 'bg-red-600 hover:bg-red-700';
       default: return 'bg-yellow-600 hover:bg-yellow-700';
     }
+  };
+
+  const getProfessorName = (professorId: string) => {
+    const professor = professors.find(p => p.id === professorId);
+    return professor ? professor.name : 'Unknown Professor';
   };
 
   const getRecentActivity = () => {
@@ -190,7 +190,7 @@ const StudentDashboard: React.FC = () => {
                       <div className="space-y-2">
                         <h3 className="font-semibold text-primary">{appointment.subject}</h3>
                         <p className="text-sm text-muted-foreground">
-                          Professor: {appointment.professor_profile?.name || 'Unknown'}
+                          Professor: {getProfessorName(appointment.professor_id)}
                         </p>
                         <div className="flex items-center space-x-4 text-sm">
                           <div className="flex items-center space-x-1">

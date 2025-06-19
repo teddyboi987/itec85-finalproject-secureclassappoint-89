@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,72 +8,21 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { professors } from '@/data/subjects';
 
 interface BookAppointmentFormProps {
   onSuccess: () => void;
   onCancel: () => void;
 }
 
-interface Professor {
-  id: string;
-  name: string;
-  subject: string;
-  email: string;
-}
-
 const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, onCancel }) => {
   const { user } = useSupabaseAuth();
   const { toast } = useToast();
-  const [professors, setProfessors] = useState<Professor[]>([]);
   const [selectedProfessor, setSelectedProfessor] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch professors from database
-  useEffect(() => {
-    const fetchProfessors = async () => {
-      try {
-        console.log('Fetching professors from database...');
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('id, name, email, subject')
-          .eq('role', 'professor')
-          .not('subject', 'is', null)
-          .order('name');
-
-        if (error) {
-          console.error('Error fetching professors:', error);
-          setError('Failed to load professors. Please try again.');
-          return;
-        }
-
-        console.log('Fetched professors from database:', data);
-        
-        // Filter out professors without subjects and map to our interface
-        const validProfessors = (data || [])
-          .filter(prof => prof.subject && prof.subject.trim() !== '')
-          .map(prof => ({
-            id: prof.id,
-            name: prof.name,
-            email: prof.email,
-            subject: prof.subject!
-          }));
-        
-        console.log('Valid professors with subjects:', validProfessors);
-        setProfessors(validProfessors);
-      } catch (err) {
-        console.error('Unexpected error fetching professors:', err);
-        setError('Failed to load professors. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProfessors();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +46,7 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
     setIsSubmitting(true);
 
     try {
-      // Find the selected professor
+      // Find the selected professor from demo data
       const professor = professors.find(p => p.id === selectedProfessor);
       
       if (!professor) {
@@ -145,19 +94,6 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
     setIsSubmitting(false);
   };
 
-  if (isLoading) {
-    return (
-      <Card className="cvsu-card">
-        <CardContent className="p-6">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-            <p>Loading professors...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <Card className="cvsu-card">
       <CardHeader>
@@ -187,13 +123,6 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
                 </option>
               ))}
             </select>
-            {professors.length === 0 && (
-              <Alert>
-                <AlertDescription>
-                  No professors are currently available in the database. Please contact the administrator to add professor accounts with subjects assigned.
-                </AlertDescription>
-              </Alert>
-            )}
           </div>
           
           <div className="space-y-2">
@@ -233,7 +162,7 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
           <div className="flex space-x-2">
             <Button 
               type="submit" 
-              disabled={isSubmitting || professors.length === 0} 
+              disabled={isSubmitting} 
               className="flex-1 cvsu-gradient"
             >
               {isSubmitting ? 'Booking...' : 'Book Appointment'}
