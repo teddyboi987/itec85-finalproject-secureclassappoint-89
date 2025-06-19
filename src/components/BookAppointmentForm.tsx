@@ -5,12 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Appointment } from '@/types/auth';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { subjects, getProfessorBySubject } from '@/data/subjects';
 
 interface BookAppointmentFormProps {
-  onSuccess: (appointment: Appointment) => void;
+  onSuccess: () => void;
   onCancel: () => void;
 }
 
@@ -43,34 +43,59 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
 
     setIsSubmitting(true);
 
-    // Get the professor assigned to the selected subject
-    const professor = getProfessorBySubject(selectedSubject);
-    
-    if (!professor) {
-      setError('Professor not found for selected subject');
-      setIsSubmitting(false);
-      return;
+    try {
+      // Find professor for the selected subject
+      const professor = getProfessorBySubject(selectedSubject);
+      
+      if (!professor) {
+        setError('Professor not found for selected subject');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // First, try to find the professor's profile in the database by subject
+      const { data: professorProfile, error: professorError } = await supabase
+        .from('profiles')
+        .select('id, name')
+        .eq('subject', selectedSubject)
+        .eq('role', 'professor')
+        .single();
+
+      if (professorError) {
+        console.error('Error finding professor:', professorError);
+        setError('Professor not found in database. Please contact administrator.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Create appointment in database
+      const { data: appointment, error: appointmentError } = await supabase
+        .from('appointments')
+        .insert({
+          student_id: user!.id,
+          professor_id: professorProfile.id,
+          subject: selectedSubject,
+          date,
+          time,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (appointmentError) {
+        console.error('Error creating appointment:', appointmentError);
+        setError('Failed to create appointment. Please try again.');
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log('Appointment created successfully:', appointment);
+      onSuccess();
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      setError('An unexpected error occurred. Please try again.');
     }
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    // Create appointment with correct subject-professor mapping
-    const newAppointment: Appointment = {
-      id: Date.now().toString(),
-      studentId: user!.id,
-      professorId: professor.id,
-      studentName: profile?.name || 'Student',
-      professorName: professor.name,
-      subject: selectedSubject, // This ensures the correct subject is stored
-      date,
-      time,
-      status: 'pending'
-    };
-
-    console.log('Creating appointment:', newAppointment); // Debug log
-
-    onSuccess(newAppointment);
     setIsSubmitting(false);
   };
 

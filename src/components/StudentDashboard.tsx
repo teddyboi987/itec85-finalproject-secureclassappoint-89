@@ -1,31 +1,67 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, BookOpen, Plus, GraduationCap } from 'lucide-react';
 import BookAppointmentForm from './BookAppointmentForm';
-import { Appointment } from '@/types/auth';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
+import { supabase } from '@/integrations/supabase/client';
+
+interface DatabaseAppointment {
+  id: string;
+  student_id: string;
+  professor_id: string;
+  subject: string;
+  date: string;
+  time: string;
+  status: string;
+  created_at: string;
+  professor_profile?: {
+    name: string;
+  };
+}
 
 const StudentDashboard: React.FC = () => {
+  const { user } = useSupabaseAuth();
   const [showBookingForm, setShowBookingForm] = useState(false);
-  const [appointments, setAppointments] = useState<Appointment[]>([
-    {
-      id: '1',
-      studentId: '1',  
-      professorId: '2',
-      studentName: 'John Student',
-      professorName: 'Prof. Santos',
-      subject: 'Programming',
-      date: '2024-01-15',
-      time: '10:00',
-      status: 'pending'
-    }
-  ]);
+  const [appointments, setAppointments] = useState<DatabaseAppointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleBookingSuccess = (appointment: Appointment) => {
-    setAppointments([...appointments, appointment]);
+  const fetchAppointments = async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          professor_profile:profiles!appointments_professor_id_fkey(name)
+        `)
+        .eq('student_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        return;
+      }
+
+      console.log('Fetched appointments:', data);
+      setAppointments(data || []);
+    } catch (err) {
+      console.error('Unexpected error fetching appointments:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [user]);
+
+  const handleBookingSuccess = () => {
     setShowBookingForm(false);
+    fetchAppointments(); // Refresh the appointments list
   };
 
   const getStatusColor = (status: string) => {
@@ -35,6 +71,17 @@ const StudentDashboard: React.FC = () => {
       default: return 'bg-yellow-600 hover:bg-yellow-700';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading appointments...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50">
@@ -97,7 +144,10 @@ const StudentDashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Last appointment request sent on {new Date().toLocaleDateString()}
+                {appointments.length > 0 
+                  ? `Last appointment request: ${new Date(appointments[0].created_at).toLocaleDateString()}`
+                  : 'No appointment requests yet'
+                }
               </p>
             </CardContent>
           </Card>
@@ -125,7 +175,7 @@ const StudentDashboard: React.FC = () => {
                       <div className="space-y-2">
                         <h3 className="font-semibold text-primary">{appointment.subject}</h3>
                         <p className="text-sm text-muted-foreground">
-                          Professor: {appointment.professorName}
+                          Professor: {appointment.professor_profile?.name || 'Unknown'}
                         </p>
                         <div className="flex items-center space-x-4 text-sm">
                           <div className="flex items-center space-x-1">

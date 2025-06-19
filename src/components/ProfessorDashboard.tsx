@@ -4,57 +4,82 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, CheckCircle, XCircle, User, BookOpen } from 'lucide-react';
-import { Appointment } from '@/types/auth';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
+import { supabase } from '@/integrations/supabase/client';
+
+interface DatabaseAppointment {
+  id: string;
+  student_id: string;
+  professor_id: string;
+  subject: string;
+  date: string;
+  time: string;
+  status: string;
+  created_at: string;
+  student_profile?: {
+    name: string;
+  };
+}
 
 const ProfessorDashboard: React.FC = () => {
   const { profile } = useSupabaseAuth();
-  const professorSubject = profile?.subject || '';
+  const [appointments, setAppointments] = useState<DatabaseAppointment[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Mock appointments - dynamically filter by professor's actual subject
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const fetchAppointments = async () => {
+    if (!profile?.id) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          student_profile:profiles!appointments_student_id_fkey(name)
+        `)
+        .eq('professor_id', profile.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        return;
+      }
+
+      console.log('Fetched professor appointments:', data);
+      setAppointments(data || []);
+    } catch (err) {
+      console.error('Unexpected error fetching appointments:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Initialize appointments with correct subject mapping
-    const initialAppointments: Appointment[] = [
-      {
-        id: '1',
-        studentId: '1',
-        professorId: profile?.id || '2',
-        studentName: 'John Student',
-        professorName: profile?.name || 'Prof. Santos',
-        subject: professorSubject, // Use actual professor's subject
-        date: '2024-12-20',
-        time: '10:00',
-        status: 'pending'
-      },
-      {
-        id: '2',
-        studentId: '4',
-        professorId: profile?.id || '2',
-        studentName: 'Jane Student',
-        professorName: profile?.name || 'Prof. Santos',
-        subject: professorSubject, // Use actual professor's subject
-        date: '2024-12-21',
-        time: '14:00',
-        status: 'pending'
+    fetchAppointments();
+  }, [profile]);
+
+  const handleAppointmentAction = async (appointmentId: string, action: 'approved' | 'rejected') => {
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status: action })
+        .eq('id', appointmentId);
+
+      if (error) {
+        console.error('Error updating appointment:', error);
+        return;
       }
-    ];
 
-    // Only show appointments if professor has a subject assigned
-    if (professorSubject) {
-      setAppointments(initialAppointments);
+      // Update local state
+      setAppointments(prev =>
+        prev.map(appointment =>
+          appointment.id === appointmentId
+            ? { ...appointment, status: action }
+            : appointment
+        )
+      );
+    } catch (err) {
+      console.error('Unexpected error updating appointment:', err);
     }
-  }, [profile, professorSubject]);
-
-  const handleAppointmentAction = (appointmentId: string, action: 'approved' | 'rejected') => {
-    setAppointments(prev =>
-      prev.map(appointment =>
-        appointment.id === appointmentId
-          ? { ...appointment, status: action }
-          : appointment
-      )
-    );
   };
 
   const getStatusColor = (status: string) => {
@@ -65,16 +90,21 @@ const ProfessorDashboard: React.FC = () => {
     }
   };
 
-  // Filter appointments for this professor's subject and professor ID
-  const professorAppointments = appointments.filter(
-    appointment => 
-      appointment.subject === professorSubject && 
-      appointment.professorId === profile?.id
-  );
+  const professorSubject = profile?.subject || '';
+  const pendingAppointments = appointments.filter(a => a.status === 'pending');
+  const approvedAppointments = appointments.filter(a => a.status === 'approved');
+  const rejectedAppointments = appointments.filter(a => a.status === 'rejected');
 
-  const pendingAppointments = professorAppointments.filter(a => a.status === 'pending');
-  const approvedAppointments = professorAppointments.filter(a => a.status === 'approved');
-  const rejectedAppointments = professorAppointments.filter(a => a.status === 'rejected');
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading appointments...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!professorSubject) {
     return (
@@ -113,7 +143,7 @@ const ProfessorDashboard: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total Requests</p>
-                  <p className="text-2xl font-bold text-primary">{professorAppointments.length}</p>
+                  <p className="text-2xl font-bold text-primary">{appointments.length}</p>
                 </div>
                 <User className="h-8 w-8 text-primary/60" />
               </div>
@@ -180,7 +210,7 @@ const ProfessorDashboard: React.FC = () => {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Student: {appointment.studentName}
+                          Student: {appointment.student_profile?.name || 'Unknown'}
                         </p>
                         <div className="flex items-center space-x-4 text-sm">
                           <div className="flex items-center space-x-1">
@@ -226,7 +256,7 @@ const ProfessorDashboard: React.FC = () => {
             <CardDescription>Complete history of appointment requests for your subject</CardDescription>
           </CardHeader>
           <CardContent>
-            {professorAppointments.length === 0 ? (
+            {appointments.length === 0 ? (
               <div className="text-center py-8">
                 <BookOpen className="h-12 w-12 text-primary/40 mx-auto mb-4" />
                 <p className="text-muted-foreground">
@@ -235,7 +265,7 @@ const ProfessorDashboard: React.FC = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {professorAppointments.map((appointment) => (
+                {appointments.map((appointment) => (
                   <div key={appointment.id} className="border border-primary/20 rounded-lg p-4 bg-white">
                     <div className="flex justify-between items-start">
                       <div className="space-y-2">
@@ -246,7 +276,7 @@ const ProfessorDashboard: React.FC = () => {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Student: {appointment.studentName}
+                          Student: {appointment.student_profile?.name || 'Unknown'}
                         </p>
                         <div className="flex items-center space-x-4 text-sm">
                           <div className="flex items-center space-x-1">
