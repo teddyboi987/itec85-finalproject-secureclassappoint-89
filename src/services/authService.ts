@@ -8,11 +8,20 @@ export const authService = {
     // Check if it's a professor email
     const isProfessor = email.includes('@cvsu.edu.ph') && email !== 'admin@cvsu.edu.ph';
     
+    // For professors, we don't allow signup - they should use existing accounts
+    if (isProfessor) {
+      return { 
+        error: { 
+          message: 'Professor accounts are pre-created by admin. Please use the "Sign In" option with your provided credentials.' 
+        } 
+      };
+    }
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: isProfessor ? undefined : redirectUrl,
+        emailRedirectTo: redirectUrl,
         data: {
           name: name
         }
@@ -39,6 +48,17 @@ export const authService = {
       email,
       password,
     });
+    
+    if (error) {
+      // Handle email not confirmed error specifically for professors
+      if (error.message.includes('Email not confirmed') && email.includes('@cvsu.edu.ph')) {
+        return { 
+          error: { 
+            message: 'Professor account email confirmation issue. Please contact the administrator.' 
+          } 
+        };
+      }
+    }
     
     return { error };
   },

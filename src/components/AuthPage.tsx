@@ -37,13 +37,7 @@ const AuthPage: React.FC = () => {
       if (error) {
         setError(error.message);
       } else {
-        // Check if it's a professor email
-        const isProfessor = email.includes('@cvsu.edu.ph') && email !== 'admin@cvsu.edu.ph';
-        if (isProfessor) {
-          setMessage('Professor account created! You can now sign in.');
-        } else {
-          setMessage('Check your email for the confirmation link!');
-        }
+        setMessage('Check your email for the confirmation link!');
       }
     }
   };
@@ -74,10 +68,16 @@ const AuthPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground">
                   An online appointment platform for students to book academic consultations with professors.
                 </p>
-                {isProfessorEmail && !isLogin && (
-                  <p className="text-sm text-blue-600 mt-2 font-medium">
-                    Professor accounts are auto-approved - no email confirmation needed!
-                  </p>
+                {isProfessorEmail && (
+                  <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
+                    <p className="text-sm text-blue-700 font-medium">
+                      Professor Account Detected
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      Use "Sign In" with your admin-provided credentials. 
+                      {isLogin ? '' : ' No signup needed!'}
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
@@ -136,7 +136,7 @@ const AuthPage: React.FC = () => {
                 </div>
               </div>
               
-              {!isLogin && (
+              {!isLogin && !isProfessorEmail && (
                 <div className="space-y-2">
                   <Label htmlFor="name">Full Name</Label>
                   <Input
@@ -144,7 +144,7 @@ const AuthPage: React.FC = () => {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    required={!isLogin}
+                    required={!isLogin && !isProfessorEmail}
                     disabled={isLoading}
                     className="border-primary/20 focus:border-primary"
                     placeholder="Enter your full name"
@@ -164,11 +164,6 @@ const AuthPage: React.FC = () => {
                   className="border-primary/20 focus:border-primary"
                   placeholder="Enter your email address"
                 />
-                {isProfessorEmail && (
-                  <p className="text-xs text-blue-600">
-                    Professor email detected - use default password "prof123" if creating new account
-                  </p>
-                )}
               </div>
               
               <div className="space-y-2">
@@ -183,14 +178,20 @@ const AuthPage: React.FC = () => {
                   className="border-primary/20 focus:border-primary"
                   placeholder={isProfessorEmail && !isLogin ? "Use: prof123" : "Enter your password"}
                 />
+                {isProfessorEmail && !isLogin && (
+                  <p className="text-xs text-red-600">
+                    Professor accounts cannot be created here. Please use "Sign In" instead.
+                  </p>
+                )}
               </div>
               
+              {/* Conditionally disable signup for professors */}
               <Button 
                 type="submit" 
                 className="w-full cvsu-gradient"
-                disabled={isLoading}
+                disabled={isLoading || (!isLogin && isProfessorEmail)}
               >
-                {isLoading ? (isLogin ? 'Signing in...' : 'Creating account...') : (isLogin ? 'Sign In' : 'Create Account')}
+                {isLoading ? (isLogin ? 'Signing in...' : 'Creating account...') : (isLogin ? 'Sign In' : isProfessorEmail ? 'Use Sign In Instead' : 'Create Account')}
               </Button>
               
               <div className="text-center">
@@ -205,7 +206,7 @@ const AuthPage: React.FC = () => {
                   disabled={isLoading}
                   className="text-primary hover:text-primary/80"
                 >
-                  {isLogin ? "New user? Create an account" : "Already have an account? Sign in"}
+                  {isLogin ? "New student? Create an account" : "Already have an account? Sign in"}
                 </Button>
               </div>
             </form>
