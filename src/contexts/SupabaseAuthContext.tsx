@@ -30,86 +30,112 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data: profileData, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      
+      if (profileData) {
+        return {
+          id: profileData.id,
+          name: profileData.name,
+          email: profileData.email,
+          role: profileData.role as 'student' | 'professor' | 'admin',
+          subject: profileData.subject || undefined
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error in profile fetch:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
+        
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile with a small delay to ensure the trigger has completed
+          // Fetch profile with delay to ensure trigger completion
           setTimeout(async () => {
-            try {
-              const { data: profileData, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .maybeSingle();
-              
-              if (error) {
-                console.error('Error fetching profile:', error);
-              } else if (profileData) {
-                const typedProfile: Profile = {
-                  id: profileData.id,
-                  name: profileData.name,
-                  email: profileData.email,
-                  role: profileData.role as 'student' | 'professor' | 'admin',
-                  subject: profileData.subject || undefined
-                };
-                setProfile(typedProfile);
-              }
-            } catch (error) {
-              console.error('Error in profile fetch:', error);
+            if (!mounted) return;
+            const profileData = await fetchProfile(session.user.id);
+            if (mounted) {
+              setProfile(profileData);
+              setIsLoading(false);
             }
           }, 500);
         } else {
           setProfile(null);
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        // Fetch user profile
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle()
-          .then(({ data, error }) => {
-            if (error) {
-              console.error('Error fetching profile:', error);
-            } else if (data) {
-              const typedProfile: Profile = {
-                id: data.id,
-                name: data.name,
-                email: data.email,
-                role: data.role as 'student' | 'professor' | 'admin',
-                subject: data.subject || undefined
-              };
-              setProfile(typedProfile);
-            }
-          });
-      }
-      
-      setIsLoading(false);
-    });
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setIsLoading(false);
+          return;
+        }
 
-    return () => subscription.unsubscribe();
+        if (!mounted) return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          const profileData = await fetchProfile(session.user.id);
+          if (mounted) {
+            setProfile(profileData);
+          }
+        }
+        
+        if (mounted) {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, name: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    // Check if it's a professor email - they don't need email confirmation
+    // Check if it's a professor email
     const isProfessor = email.includes('@cvsu.edu.ph') && email !== 'admin@cvsu.edu.ph';
     
     const { data, error } = await supabase.auth.signUp({
@@ -123,7 +149,6 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
     });
     
-    // Handle the case where user already exists
     if (error) {
       if (error.message.includes('User already registered') || 
           error.message.includes('duplicate key') ||
@@ -158,7 +183,6 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
     });
     
-    // Provide a more helpful error message for Google auth issues
     if (error) {
       if (error.message.includes('provider is not enabled')) {
         return { 
@@ -176,17 +200,19 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
     await supabase.auth.signOut();
   };
 
+  const contextValue: AuthContextType = {
+    user,
+    profile,
+    session,
+    signUp,
+    signIn,
+    signInWithGoogle,
+    signOut,
+    isLoading
+  };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      profile,
-      session,
-      signUp,
-      signIn,
-      signInWithGoogle,
-      signOut,
-      isLoading
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
