@@ -24,14 +24,15 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
   const fetchAppointments = async () => {
     if (!professorSubject) {
+      setAppointments([]);
       setIsLoading(false);
       return;
     }
 
     try {
+      setIsLoading(true);
       console.log('Fetching appointments for professor subject:', professorSubject);
       
-      // Fetch all appointments and filter on the client side for more accurate matching
       const { data, error } = await supabase
         .from('appointments')
         .select(`
@@ -47,17 +48,20 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
           description: "Failed to fetch appointments",
           variant: "destructive",
         });
+        setAppointments([]);
         return;
       }
 
       console.log('All appointments fetched:', data);
       
-      // Filter appointments that match the professor's subject
-      // The subject format is: "Mathematics (Prof. Dr. John Smith)"
+      // More robust filtering - check if the subject string contains the professor's subject
       const filteredAppointments = data?.filter(appointment => {
-        const subjectMatch = appointment.subject.toLowerCase().includes(professorSubject.toLowerCase());
-        console.log(`Checking appointment: "${appointment.subject}" contains "${professorSubject}":`, subjectMatch);
-        return subjectMatch;
+        // Extract the subject part before the professor name in parentheses
+        const subjectPart = appointment.subject.split('(')[0].trim();
+        const matches = subjectPart.toLowerCase() === professorSubject.toLowerCase();
+        
+        console.log(`Checking: "${subjectPart}" === "${professorSubject}":`, matches);
+        return matches;
       }) || [];
 
       console.log('Filtered appointments for professor:', filteredAppointments);
@@ -71,6 +75,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         description: "An unexpected error occurred",
         variant: "destructive",
       });
+      setAppointments([]);
     } finally {
       setIsLoading(false);
     }

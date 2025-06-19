@@ -50,8 +50,35 @@ export const useAppointments = (userId: string | undefined) => {
     }
   };
 
+  // Set up real-time subscription for appointments
   useEffect(() => {
+    if (!userId) return;
+
+    // Initial fetch
     fetchAppointments();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel('appointments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+          filter: `student_id=eq.${userId}`
+        },
+        (payload) => {
+          console.log('Real-time appointment change:', payload);
+          // Refetch appointments on any change
+          fetchAppointments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId]);
 
   return {
