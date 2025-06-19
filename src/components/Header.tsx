@@ -14,7 +14,7 @@ const Header: React.FC = () => {
       case 'student':
         return `Welcome, ${profile.name}`;
       case 'professor':
-        return `Welcome, Prof. ${profile.name}`;
+        return `Welcome, ${profile.name}`;
       case 'admin':
         return `Welcome, Admin ${profile.name}`;
       default:
