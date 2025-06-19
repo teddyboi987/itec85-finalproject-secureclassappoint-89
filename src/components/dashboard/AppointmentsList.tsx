@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,8 +25,17 @@ interface AppointmentsListProps {
 
 const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onAppointmentDeleted }) => {
   const { toast } = useToast();
+  const [localAppointments, setLocalAppointments] = useState(appointments);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+
+  // Update local state when appointments prop changes
+  React.useEffect(() => {
+    setLocalAppointments(appointments);
+  }, [appointments]);
 
   const handleDeleteAppointment = async (appointmentId: string) => {
+    setDeletingIds(prev => new Set(prev).add(appointmentId));
+    
     try {
       const { error } = await supabase
         .from('appointments')
@@ -43,11 +52,15 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
         return;
       }
 
+      // Remove from local state immediately for instant UI feedback
+      setLocalAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
+
       toast({
         title: "Success",
         description: "Appointment request deleted successfully",
       });
 
+      // Also call the parent callback to refresh data
       if (onAppointmentDeleted) {
         onAppointmentDeleted();
       }
@@ -57,6 +70,12 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
         title: "Error",
         description: "An unexpected error occurred",
         variant: "destructive",
+      });
+    } finally {
+      setDeletingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(appointmentId);
+        return newSet;
       });
     }
   };
@@ -82,7 +101,7 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
         <CardDescription>View and manage your appointment requests</CardDescription>
       </CardHeader>
       <CardContent>
-        {appointments.length === 0 ? (
+        {localAppointments.length === 0 ? (
           <div className="text-center py-8">
             <BookOpen className="h-12 w-12 text-primary/40 mx-auto mb-4" />
             <p className="text-muted-foreground py-4">
@@ -91,7 +110,7 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
           </div>
         ) : (
           <div className="space-y-4">
-            {appointments.map((appointment) => (
+            {localAppointments.map((appointment) => (
               <div key={appointment.id} className="border border-primary/20 rounded-lg p-4 bg-white">
                 <div className="flex justify-between items-start">
                   <div className="space-y-2 flex-1">
@@ -119,9 +138,14 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
                         size="sm"
                         variant="outline"
                         onClick={() => handleDeleteAppointment(appointment.id)}
+                        disabled={deletingIds.has(appointment.id)}
                         className="border-red-300 text-red-600 hover:bg-red-50"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        {deletingIds.has(appointment.id) ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
                       </Button>
                     )}
                   </div>

@@ -29,6 +29,8 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
     }
 
     try {
+      console.log('Fetching appointments for professor subject:', professorSubject);
+      
       // Fetch appointments where the subject contains the professor's subject
       const { data, error } = await supabase
         .from('appointments')
@@ -50,6 +52,14 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
       }
 
       console.log('Fetched professor appointments:', data);
+      console.log('Total appointments found:', data?.length || 0);
+      
+      // Log each appointment's subject for debugging
+      data?.forEach(apt => {
+        console.log(`Appointment subject: "${apt.subject}" contains "${professorSubject}":`, 
+          apt.subject.toLowerCase().includes(professorSubject.toLowerCase()));
+      });
+
       setAppointments(data || []);
     } catch (err) {
       console.error('Unexpected error fetching appointments:', err);
@@ -65,6 +75,8 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
   const updateAppointmentStatus = async (appointmentId: string, status: 'approved' | 'rejected') => {
     try {
+      console.log(`Updating appointment ${appointmentId} status to:`, status);
+      
       const { error } = await supabase
         .from('appointments')
         .update({ status })
@@ -80,7 +92,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         return false;
       }
 
-      // Update local state
+      // Update local state immediately for instant UI feedback
       setAppointments(prev =>
         prev.map(appointment =>
           appointment.id === appointmentId
