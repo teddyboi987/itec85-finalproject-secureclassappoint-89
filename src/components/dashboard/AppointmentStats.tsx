@@ -19,7 +19,7 @@ interface AppointmentStatsProps {
 }
 
 const AppointmentStats: React.FC<AppointmentStatsProps> = ({ appointments }) => {
-  // Ensure we have a valid array
+  // Ensure we have a valid array and calculate stats in real-time
   const validAppointments = appointments || [];
   
   const totalAppointments = validAppointments.length;
@@ -27,12 +27,12 @@ const AppointmentStats: React.FC<AppointmentStatsProps> = ({ appointments }) => 
   const approvedCount = validAppointments.filter(a => a.status === 'approved').length;
   const rejectedCount = validAppointments.filter(a => a.status === 'rejected').length;
 
-  console.log('AppointmentStats - Current stats:', { 
+  console.log('AppointmentStats - Real-time update:', { 
     total: totalAppointments, 
     pending: pendingCount, 
     approved: approvedCount, 
     rejected: rejectedCount,
-    appointments: validAppointments 
+    appointmentsLength: validAppointments.length
   });
 
   return (

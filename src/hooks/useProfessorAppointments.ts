@@ -54,19 +54,17 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
       console.log('All appointments fetched:', data);
       
-      // More robust filtering - check if the subject string contains the professor's subject
+      // Filter appointments that exactly match the professor's subject
       const filteredAppointments = data?.filter(appointment => {
-        // Extract the subject part before the professor name in parentheses
+        // Extract the subject part before any professor name in parentheses
         const subjectPart = appointment.subject.split('(')[0].trim();
         const matches = subjectPart.toLowerCase() === professorSubject.toLowerCase();
         
-        console.log(`Checking: "${subjectPart}" === "${professorSubject}":`, matches);
+        console.log(`Filtering: "${subjectPart}" === "${professorSubject}": ${matches}`);
         return matches;
       }) || [];
 
       console.log('Filtered appointments for professor:', filteredAppointments);
-      console.log('Total filtered appointments:', filteredAppointments.length);
-
       setAppointments(filteredAppointments);
     } catch (err) {
       console.error('Unexpected error fetching appointments:', err);
@@ -125,8 +123,34 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
     }
   };
 
+  // Set up real-time subscription and initial fetch
   useEffect(() => {
+    if (!professorSubject) return;
+
+    // Initial fetch
     fetchAppointments();
+
+    // Set up real-time subscription for all appointment changes
+    const channel = supabase
+      .channel('professor-appointments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments'
+        },
+        (payload) => {
+          console.log('Real-time appointment change for professor:', payload);
+          // Refetch appointments to ensure filtering is applied correctly
+          fetchAppointments();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [professorSubject]);
 
   return {

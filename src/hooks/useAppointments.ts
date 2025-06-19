@@ -54,12 +54,14 @@ export const useAppointments = (userId: string | undefined) => {
   useEffect(() => {
     if (!userId) return;
 
+    console.log('Setting up appointments subscription for user:', userId);
+    
     // Initial fetch
     fetchAppointments();
 
     // Set up real-time subscription
     const channel = supabase
-      .channel('appointments-changes')
+      .channel('student-appointments-changes')
       .on(
         'postgres_changes',
         {
@@ -69,14 +71,15 @@ export const useAppointments = (userId: string | undefined) => {
           filter: `student_id=eq.${userId}`
         },
         (payload) => {
-          console.log('Real-time appointment change:', payload);
-          // Refetch appointments on any change
+          console.log('Real-time appointment change for student:', payload);
+          // Refetch appointments on any change to ensure data consistency
           fetchAppointments();
         }
       )
       .subscribe();
 
     return () => {
+      console.log('Cleaning up appointments subscription');
       supabase.removeChannel(channel);
     };
   }, [userId]);
