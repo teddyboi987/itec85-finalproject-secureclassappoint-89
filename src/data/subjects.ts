@@ -1,25 +1,25 @@
 
 import { Subject, Professor } from '@/types/auth';
 
-// Demo professor data - these would normally be real user accounts in Supabase Auth
+// Real professor data that matches the database profiles
 export const professors: Professor[] = [
-  { id: 'demo-1', name: 'Prof. Santos', subject: 'Programming' },
-  { id: 'demo-2', name: 'Prof. Reyes', subject: 'Data Structures' },
-  { id: 'demo-3', name: 'Prof. Cruz', subject: 'Web Development' },
-  { id: 'demo-4', name: 'Prof. Dela Peña', subject: 'Computer Networks' },
-  { id: 'demo-5', name: 'Prof. Garcia', subject: 'Operating Systems' },
-  { id: 'demo-6', name: 'Prof. Ramos', subject: 'Cybersecurity' },
-  { id: 'demo-7', name: 'Prof. Lim', subject: 'Algorithms' },
+  { id: 'prof-cruz', name: 'Prof. Cruz', subject: 'Mathematics' },
+  { id: 'prof-delapena', name: 'Prof. Dela Pena', subject: 'Physics' },
+  { id: 'prof-garcia', name: 'Prof. Garcia', subject: 'Chemistry' },
+  { id: 'prof-lim', name: 'Prof. Lim', subject: 'Biology' },
+  { id: 'prof-ramos', name: 'Prof. Ramos', subject: 'English' },
+  { id: 'prof-reyes', name: 'Prof. Reyes', subject: 'History' },
+  { id: 'prof-santos', name: 'Prof. Santos', subject: 'Computer Science' },
 ];
 
 export const subjects: Subject[] = [
-  { name: 'Programming', professor: professors.find(p => p.subject === 'Programming')! },
-  { name: 'Data Structures', professor: professors.find(p => p.subject === 'Data Structures')! },
-  { name: 'Web Development', professor: professors.find(p => p.subject === 'Web Development')! },
-  { name: 'Computer Networks', professor: professors.find(p => p.subject === 'Computer Networks')! },
-  { name: 'Operating Systems', professor: professors.find(p => p.subject === 'Operating Systems')! },
-  { name: 'Cybersecurity', professor: professors.find(p => p.subject === 'Cybersecurity')! },
-  { name: 'Algorithms', professor: professors.find(p => p.subject === 'Algorithms')! },
+  { name: 'Mathematics', professor: professors.find(p => p.subject === 'Mathematics')! },
+  { name: 'Physics', professor: professors.find(p => p.subject === 'Physics')! },
+  { name: 'Chemistry', professor: professors.find(p => p.subject === 'Chemistry')! },
+  { name: 'Biology', professor: professors.find(p => p.subject === 'Biology')! },
+  { name: 'English', professor: professors.find(p => p.subject === 'English')! },
+  { name: 'History', professor: professors.find(p => p.subject === 'History')! },
+  { name: 'Computer Science', professor: professors.find(p => p.subject === 'Computer Science')! },
 ];
 
 export const getProfessorBySubject = (subjectName: string): Professor | undefined => {

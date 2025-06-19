@@ -3,9 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, CheckCircle, XCircle, User, BookOpen } from 'lucide-react';
+import { Calendar, Clock, CheckCircle, XCircle, User, BookOpen, AlertCircle } from 'lucide-react';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface DatabaseAppointment {
   id: string;
@@ -23,6 +24,7 @@ interface DatabaseAppointment {
 
 const ProfessorDashboard: React.FC = () => {
   const { profile } = useSupabaseAuth();
+  const { toast } = useToast();
   const [appointments, setAppointments] = useState<DatabaseAppointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -30,17 +32,23 @@ const ProfessorDashboard: React.FC = () => {
     if (!profile?.id) return;
 
     try {
+      // Fetch appointments where the subject matches the professor's subject
       const { data, error } = await supabase
         .from('appointments')
         .select(`
           *,
           student_profile:profiles!appointments_student_id_fkey(name)
         `)
-        .eq('professor_id', profile.id)
+        .ilike('subject', `%${profile.subject}%`)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching appointments:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch appointments",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -48,6 +56,11 @@ const ProfessorDashboard: React.FC = () => {
       setAppointments(data || []);
     } catch (err) {
       console.error('Unexpected error fetching appointments:', err);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -66,6 +79,11 @@ const ProfessorDashboard: React.FC = () => {
 
       if (error) {
         console.error('Error updating appointment:', error);
+        toast({
+          title: "Error",
+          description: `Failed to ${action} appointment`,
+          variant: "destructive",
+        });
         return;
       }
 
@@ -77,8 +95,18 @@ const ProfessorDashboard: React.FC = () => {
             : appointment
         )
       );
+
+      toast({
+        title: "Success",
+        description: `Appointment ${action} successfully`,
+      });
     } catch (err) {
       console.error('Unexpected error updating appointment:', err);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     }
   };
 
@@ -87,6 +115,14 @@ const ProfessorDashboard: React.FC = () => {
       case 'approved': return 'bg-green-600 hover:bg-green-700';
       case 'rejected': return 'bg-red-600 hover:bg-red-700';
       default: return 'bg-yellow-600 hover:bg-yellow-700';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved': return CheckCircle;
+      case 'rejected': return XCircle;
+      default: return AlertCircle;
     }
   };
 
@@ -100,7 +136,7 @@ const ProfessorDashboard: React.FC = () => {
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading appointments...</p>
+          <p>Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -132,7 +168,7 @@ const ProfessorDashboard: React.FC = () => {
           </div>
           <p className="text-muted-foreground">
             Subject: <span className="font-semibold text-primary">{professorSubject}</span> | 
-            Manage your appointment requests
+            Manage your student consultations
           </p>
         </div>
 
@@ -142,7 +178,7 @@ const ProfessorDashboard: React.FC = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Requests</p>
+                  <p className="text-sm text-muted-foreground">Total Consultations</p>
                   <p className="text-2xl font-bold text-primary">{appointments.length}</p>
                 </div>
                 <User className="h-8 w-8 text-primary/60" />
@@ -154,10 +190,10 @@ const ProfessorDashboard: React.FC = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Pending</p>
+                  <p className="text-sm text-muted-foreground">Awaiting Review</p>
                   <p className="text-2xl font-bold text-yellow-600">{pendingAppointments.length}</p>
                 </div>
-                <Clock className="h-8 w-8 text-yellow-600" />
+                <AlertCircle className="h-8 w-8 text-yellow-600" />
               </div>
             </CardContent>
           </Card>
@@ -166,7 +202,7 @@ const ProfessorDashboard: React.FC = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Approved</p>
+                  <p className="text-sm text-muted-foreground">Scheduled</p>
                   <p className="text-2xl font-bold text-green-600">{approvedAppointments.length}</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-600" />
@@ -178,7 +214,7 @@ const ProfessorDashboard: React.FC = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Rejected</p>
+                  <p className="text-sm text-muted-foreground">Declined</p>
                   <p className="text-2xl font-bold text-red-600">{rejectedAppointments.length}</p>
                 </div>
                 <XCircle className="h-8 w-8 text-red-600" />
@@ -192,10 +228,10 @@ const ProfessorDashboard: React.FC = () => {
           <Card className="cvsu-card mb-6 bg-white/90 backdrop-blur-sm">
             <CardHeader>
               <CardTitle className="flex items-center space-x-2 text-primary">
-                <Clock className="h-5 w-5 text-yellow-600" />
-                <span>Pending Requests for {professorSubject}</span>
+                <AlertCircle className="h-5 w-5 text-yellow-600" />
+                <span>Consultation Requests for {professorSubject}</span>
               </CardTitle>
-              <CardDescription>Review and respond to student appointment requests</CardDescription>
+              <CardDescription>Review and respond to student consultation requests</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -210,7 +246,7 @@ const ProfessorDashboard: React.FC = () => {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          Student: {appointment.student_profile?.name || 'Unknown'}
+                          Student: {appointment.student_profile?.name || 'Unknown Student'}
                         </p>
                         <div className="flex items-center space-x-4 text-sm">
                           <div className="flex items-center space-x-1">
@@ -230,7 +266,7 @@ const ProfessorDashboard: React.FC = () => {
                           className="bg-green-600 hover:bg-green-700 text-white"
                         >
                           <CheckCircle className="h-4 w-4 mr-1" />
-                          Approve
+                          Schedule
                         </Button>
                         <Button
                           size="sm"
@@ -238,7 +274,7 @@ const ProfessorDashboard: React.FC = () => {
                           onClick={() => handleAppointmentAction(appointment.id, 'rejected')}
                         >
                           <XCircle className="h-4 w-4 mr-1" />
-                          Reject
+                          Decline
                         </Button>
                       </div>
                     </div>
@@ -252,46 +288,73 @@ const ProfessorDashboard: React.FC = () => {
         {/* All Appointments */}
         <Card className="cvsu-card bg-white/90 backdrop-blur-sm">
           <CardHeader>
-            <CardTitle className="text-primary">All {professorSubject} Appointments</CardTitle>
-            <CardDescription>Complete history of appointment requests for your subject</CardDescription>
+            <CardTitle className="text-primary">All {professorSubject} Consultations</CardTitle>
+            <CardDescription>Complete history of student consultation requests for your subject</CardDescription>
           </CardHeader>
           <CardContent>
             {appointments.length === 0 ? (
               <div className="text-center py-8">
                 <BookOpen className="h-12 w-12 text-primary/40 mx-auto mb-4" />
                 <p className="text-muted-foreground">
-                  No appointment requests for {professorSubject} yet.
+                  No consultation requests for {professorSubject} yet.
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Students can book consultations through the student portal.
                 </p>
               </div>
             ) : (
               <div className="space-y-4">
-                {appointments.map((appointment) => (
-                  <div key={appointment.id} className="border border-primary/20 rounded-lg p-4 bg-white">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <h3 className="font-semibold text-primary">{appointment.subject}</h3>
-                          <Badge className={getStatusColor(appointment.status)}>
-                            {appointment.status}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Student: {appointment.student_profile?.name || 'Unknown'}
-                        </p>
-                        <div className="flex items-center space-x-4 text-sm">
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-4 w-4" />
-                            <span>{appointment.date}</span>
+                {appointments.map((appointment) => {
+                  const StatusIcon = getStatusIcon(appointment.status);
+                  return (
+                    <div key={appointment.id} className="border border-primary/20 rounded-lg p-4 bg-white">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <h3 className="font-semibold text-primary">{appointment.subject}</h3>
+                            <Badge className={getStatusColor(appointment.status)}>
+                              <StatusIcon className="h-3 w-3 mr-1" />
+                              {appointment.status}
+                            </Badge>
                           </div>
-                          <div className="flex items-center space-x-1">
-                            <Clock className="h-4 w-4" />
-                            <span>{appointment.time}</span>
+                          <p className="text-sm text-muted-foreground">
+                            Student: {appointment.student_profile?.name || 'Unknown Student'}
+                          </p>
+                          <div className="flex items-center space-x-4 text-sm">
+                            <div className="flex items-center space-x-1">
+                              <Calendar className="h-4 w-4" />
+                              <span>{appointment.date}</span>
+                            </div>
+                            <div className="flex items-center space-x-1">
+                              <Clock className="h-4 w-4" />
+                              <span>{appointment.time}</span>
+                            </div>
                           </div>
                         </div>
+                        {appointment.status === 'pending' && (
+                          <div className="flex space-x-2 ml-4">
+                            <Button
+                              size="sm"
+                              onClick={() => handleAppointmentAction(appointment.id, 'approved')}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Schedule
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleAppointmentAction(appointment.id, 'rejected')}
+                            >
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Decline
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
