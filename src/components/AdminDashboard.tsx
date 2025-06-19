@@ -14,16 +14,16 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => {
     // Initialize with current system users (this would come from your auth system)
     const systemUsers: User[] = [
-      { id: '1', name: 'John Student', email: 'student@cvsu.edu.ph', role: 'student' },
-      { id: '4', name: 'Jane Student', email: 'jane@cvsu.edu.ph', role: 'student' },
-      { id: '3', name: 'Admin User', email: 'admin@cvsu.edu.ph', role: 'admin' },
-      { id: '2', name: 'Prof. Santos', email: 'santos@cvsu.edu.ph', role: 'professor', subject: 'Programming' },
-      { id: '5', name: 'Prof. Reyes', email: 'reyes@cvsu.edu.ph', role: 'professor', subject: 'Data Structures' },
-      { id: '6', name: 'Prof. Cruz', email: 'cruz@cvsu.edu.ph', role: 'professor', subject: 'Web Development' },
-      { id: '7', name: 'Prof. Dela Peña', email: 'delapena@cvsu.edu.ph', role: 'professor', subject: 'Computer Networks' },
-      { id: '8', name: 'Prof. Garcia', email: 'garcia@cvsu.edu.ph', role: 'professor', subject: 'Operating Systems' },
-      { id: '9', name: 'Prof. Ramos', email: 'ramos@cvsu.edu.ph', role: 'professor', subject: 'Cybersecurity' },
-      { id: '10', name: 'Prof. Lim', email: 'lim@cvsu.edu.ph', role: 'professor', subject: 'Algorithms' },
+      { id: '0302f7da-0d95-4142-a0b4-367e5e99a82f', name: 'tedd hernandez', email: 'main.orchard.hernandez@cvsu.edu.ph', role: 'student' },
+      { id: 'fcf71e45-380a-4b2c-bde1-51f48e2303d9', name: 'Jane Student', email: 'jane@cvsu.edu.ph', role: 'student' },
+      { id: '579e259b-1218-44e9-b6f4-3f0c14e50b00', name: 'Admin User', email: 'admin@cvsu.edu.ph', role: 'admin' },
+      { id: 'c4388413-d27e-4848-b60b-0a1ec155264b', name: 'Prof. Santos', email: 'santos@cvsu.edu.ph', role: 'professor', subject: 'Programming' },
+      { id: 'ef673dfd-50ae-4660-baed-fb4de9eb1e24', name: 'Prof. Reyes', email: 'reyes@cvsu.edu.ph', role: 'professor', subject: 'Data Structures' },
+      { id: '0bc8748d-89e7-4953-8000-961a2b0bf735', name: 'Prof. Cruz', email: 'cruz@cvsu.edu.ph', role: 'professor', subject: 'Web Development' },
+      { id: 'c5bb15fb-3f62-4c8f-95f1-772277fba2f5', name: 'Prof. Dela pena', email: 'delapena@cvsu.edu.ph', role: 'professor', subject: 'Computer Networks' },
+      { id: '6db15d63-4ac6-4ec4-baaa-40c14c349634', name: 'Prof. Garcia', email: 'garcia@cvsu.edu.ph', role: 'professor', subject: 'Operating Systems' },
+      { id: '99cc1f0d-0324-4a4a-be0a-e18990139606', name: 'Prof. Ramos', email: 'ramos@cvsu.edu.ph', role: 'professor', subject: 'Cybersecurity' },
+      { id: 'a9979f6f-9bec-45eb-a1d3-5b2320b2263e', name: 'Prof. Lim', email: 'lim@cvsu.edu.ph', role: 'professor', subject: 'Algorithms' },
     ];
 
     setUsers(systemUsers);

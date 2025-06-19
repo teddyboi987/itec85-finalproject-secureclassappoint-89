@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,19 +52,42 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
         return;
       }
 
-      // First, try to find the professor's profile in the database by subject
-      const { data: professorProfile, error: professorError } = await supabase
+      // Try to find the professor's profile in the database by subject (case-insensitive, trimmed)
+      let { data: professorProfile, error: professorError } = await supabase
         .from('profiles')
-        .select('id, name')
-        .eq('subject', selectedSubject)
+        .select('id, name, subject, email')
         .eq('role', 'professor')
+        .ilike('subject', selectedSubject.trim())
         .single();
 
-      if (professorError) {
-        console.error('Error finding professor:', professorError);
-        setError('Professor not found in database. Please contact administrator.');
-        setIsSubmitting(false);
-        return;
+      // If not found by subject, try by email as fallback
+      if (professorError || !professorProfile) {
+        // Try again with wildcards for more robust case-insensitive/whitespace-insensitive match
+        const { data: profBySubject, error: profBySubjectError } = await supabase
+          .from('profiles')
+          .select('id, name, subject, email')
+          .eq('role', 'professor')
+          .ilike('subject', `%${selectedSubject.trim().toLowerCase()}%`)
+          .single();
+
+        if (!profBySubjectError && profBySubject) {
+          professorProfile = profBySubject;
+        } else {
+          // Fallback to email
+          const { data: profByEmail, error: profByEmailError } = await supabase
+            .from('profiles')
+            .select('id, name, subject, email')
+            .eq('role', 'professor')
+            .eq('email', professorProfile.email)
+            .single();
+
+          if (profByEmailError || !profByEmail) {
+            setError('Professor not found in database. Please contact administrator.');
+            setIsSubmitting(false);
+            return;
+          }
+          professorProfile = profByEmail;
+        }
       }
 
       // Create appointment in database
