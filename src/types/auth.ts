@@ -4,6 +4,18 @@ export interface User {
   name: string;
   email: string;
   role: 'student' | 'professor' | 'admin';
+  subject?: string; // For professors
+}
+
+export interface Professor {
+  id: string;
+  name: string;
+  subject: string;
+}
+
+export interface Subject {
+  name: string;
+  professor: Professor;
 }
 
 export interface Appointment {
