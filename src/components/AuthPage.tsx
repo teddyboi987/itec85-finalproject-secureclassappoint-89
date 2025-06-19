@@ -63,7 +63,7 @@ const AuthPage: React.FC = () => {
               <div>
                 <h3 className="font-semibold text-primary mb-1">About SecureClass Appoint</h3>
                 <p className="text-sm text-muted-foreground">
-                  An online appointment platform for CvSU students to book academic consultations with professors.
+                  An online appointment platform for students to book academic consultations with professors.
                 </p>
               </div>
             </div>
@@ -148,7 +148,7 @@ const AuthPage: React.FC = () => {
                   required
                   disabled={isLoading}
                   className="border-primary/20 focus:border-primary"
-                  placeholder="Enter your CvSU email"
+                  placeholder="Enter your email address"
                 />
               </div>
               
@@ -186,7 +186,7 @@ const AuthPage: React.FC = () => {
                   disabled={isLoading}
                   className="text-primary hover:text-primary/80"
                 >
-                  {isLogin ? "New student? Create an account" : "Already have an account? Sign in"}
+                  {isLogin ? "New user? Create an account" : "Already have an account? Sign in"}
                 </Button>
               </div>
             </form>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +16,11 @@ const professorData = [
   { name: 'Prof. Lim', email: 'lim@cvsu.edu.ph', subject: 'Algorithms' },
 ];
 
-const ProfessorAccountManager: React.FC = () => {
+interface ProfessorAccountManagerProps {
+  onProfessorsCreated?: () => void;
+}
+
+const ProfessorAccountManager: React.FC<ProfessorAccountManagerProps> = ({ onProfessorsCreated }) => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -56,75 +59,27 @@ const ProfessorAccountManager: React.FC = () => {
         return { success: false, message: 'Already exists' };
       }
 
-      // First try to create the auth user
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: prof.email,
-        password: 'prof123',
-        options: {
-          data: {
-            name: prof.name
-          }
-        }
-      });
+      // Create professor profile directly (admin can insert profiles)
+      const professorId = crypto.randomUUID();
+      const { data: insertData, error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: professorId,
+          name: prof.name,
+          email: prof.email,
+          role: 'professor',
+          subject: prof.subject
+        })
+        .select()
+        .single();
 
-      // Handle rate limit errors gracefully
-      if (signUpError && signUpError.message.includes('rate limit')) {
-        console.log(`Rate limit hit for ${prof.name}, creating profile directly`);
-        
-        // Create profile directly with a generated UUID since auth signup was rate limited
-        const userId = crypto.randomUUID();
-        const { data: insertData, error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: userId,
-            name: prof.name,
-            email: prof.email,
-            role: 'professor',
-            subject: prof.subject
-          })
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error(`Error creating profile for ${prof.name}:`, insertError);
-          return { success: false, message: `Profile creation error - ${insertError.message}` };
-        }
-
-        return { success: true, message: 'Created successfully (profile only due to rate limit)' };
+      if (insertError) {
+        console.error(`Error creating profile for ${prof.name}:`, insertError);
+        return { success: false, message: `Profile creation error - ${insertError.message}` };
       }
 
-      // If auth signup failed for other reasons
-      if (signUpError && !signUpError.message.includes('User already registered')) {
-        console.error(`Auth signup error for ${prof.name}:`, signUpError);
-        return { success: false, message: `Auth error - ${signUpError.message}` };
-      }
-
-      // If auth user was created successfully or already exists, ensure profile exists
-      if (authData.user || signUpError?.message.includes('User already registered')) {
-        const userId = authData.user?.id || crypto.randomUUID();
-        
-        // Create or update the profile with professor role
-        const { data: insertData, error: insertError } = await supabase
-          .from('profiles')
-          .upsert({
-            id: userId,
-            name: prof.name,
-            email: prof.email,
-            role: 'professor',
-            subject: prof.subject
-          })
-          .select()
-          .single();
-
-        if (insertError) {
-          console.error(`Error upserting profile for ${prof.name}:`, insertError);
-          return { success: false, message: `Profile creation error - ${insertError.message}` };
-        }
-
-        return { success: true, message: 'Created successfully' };
-      }
-
-      return { success: false, message: 'Unknown error occurred' };
+      console.log(`Successfully created professor profile for ${prof.name}:`, insertData);
+      return { success: true, message: 'Created successfully' };
     } catch (err) {
       console.error(`Error creating professor ${prof.name}:`, err);
       return { success: false, message: 'Unexpected error' };
@@ -169,6 +124,11 @@ const ProfessorAccountManager: React.FC = () => {
       
       // Refresh the list
       await fetchExistingProfessors();
+      
+      // Notify parent component to refresh users list
+      if (onProfessorsCreated) {
+        onProfessorsCreated();
+      }
       
     } catch (err) {
       setError('Failed to create professor accounts');
@@ -239,8 +199,7 @@ const ProfessorAccountManager: React.FC = () => {
           </Button>
 
           <p className="text-xs text-muted-foreground">
-            Default password for all professors: prof123<br/>
-            Note: Professors will be created with proper role assignment. Auth accounts may be rate-limited but profiles will still be created.
+            Note: Professor accounts will be created directly in the database with proper role assignment.
           </p>
         </CardContent>
       </Card>

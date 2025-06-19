@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,52 +44,34 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
     setIsSubmitting(true);
 
     try {
-      // Find professor for the selected subject
-      const professor = getProfessorBySubject(selectedSubject);
+      // Find professor for the selected subject from Supabase database
+      console.log('Looking for professor with subject:', selectedSubject);
       
-      if (!professor) {
-        setError('Professor not found for selected subject');
+      const { data: professorProfile, error: professorError } = await supabase
+        .from('profiles')
+        .select('id, name, subject, email')
+        .eq('role', 'professor')
+        .eq('subject', selectedSubject)
+        .single();
+
+      if (professorError || !professorProfile) {
+        console.error('Professor lookup error:', professorError);
+        console.log('Available professors query:');
+        
+        // Debug: Let's see what professors are available
+        const { data: allProfessors, error: debugError } = await supabase
+          .from('profiles')
+          .select('id, name, subject, email, role')
+          .eq('role', 'professor');
+        
+        console.log('All professors in database:', allProfessors);
+        
+        setError(`No professor found for ${selectedSubject}. Please contact administrator.`);
         setIsSubmitting(false);
         return;
       }
 
-      // Try to find the professor's profile in the database by subject (case-insensitive, trimmed)
-      let { data: professorProfile, error: professorError } = await supabase
-        .from('profiles')
-        .select('id, name, subject, email')
-        .eq('role', 'professor')
-        .ilike('subject', selectedSubject.trim())
-        .single();
-
-      // If not found by subject, try by email as fallback
-      if (professorError || !professorProfile) {
-        // Try again with wildcards for more robust case-insensitive/whitespace-insensitive match
-        const { data: profBySubject, error: profBySubjectError } = await supabase
-          .from('profiles')
-          .select('id, name, subject, email')
-          .eq('role', 'professor')
-          .ilike('subject', `%${selectedSubject.trim().toLowerCase()}%`)
-          .single();
-
-        if (!profBySubjectError && profBySubject) {
-          professorProfile = profBySubject;
-        } else {
-          // Fallback to email
-          const { data: profByEmail, error: profByEmailError } = await supabase
-            .from('profiles')
-            .select('id, name, subject, email')
-            .eq('role', 'professor')
-            .eq('email', professorProfile.email)
-            .single();
-
-          if (profByEmailError || !profByEmail) {
-            setError('Professor not found in database. Please contact administrator.');
-            setIsSubmitting(false);
-            return;
-          }
-          professorProfile = profByEmail;
-        }
-      }
+      console.log('Found professor:', professorProfile);
 
       // Create appointment in database
       const { data: appointment, error: appointmentError } = await supabase
