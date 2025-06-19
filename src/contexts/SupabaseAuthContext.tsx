@@ -34,30 +34,36 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Fetch user profile
+          // Fetch user profile with a small delay to ensure the trigger has completed
           setTimeout(async () => {
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-            
-            if (profileData) {
-              // Ensure the role is properly typed
-              const typedProfile: Profile = {
-                id: profileData.id,
-                name: profileData.name,
-                email: profileData.email,
-                role: profileData.role as 'student' | 'professor' | 'admin',
-                subject: profileData.subject || undefined
-              };
-              setProfile(typedProfile);
+            try {
+              const { data: profileData, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .maybeSingle();
+              
+              if (error) {
+                console.error('Error fetching profile:', error);
+              } else if (profileData) {
+                const typedProfile: Profile = {
+                  id: profileData.id,
+                  name: profileData.name,
+                  email: profileData.email,
+                  role: profileData.role as 'student' | 'professor' | 'admin',
+                  subject: profileData.subject || undefined
+                };
+                setProfile(typedProfile);
+              }
+            } catch (error) {
+              console.error('Error in profile fetch:', error);
             }
-          }, 0);
+          }, 500);
         } else {
           setProfile(null);
         }
@@ -77,10 +83,11 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
-          .single()
-          .then(({ data }) => {
-            if (data) {
-              // Ensure the role is properly typed
+          .maybeSingle()
+          .then(({ data, error }) => {
+            if (error) {
+              console.error('Error fetching profile:', error);
+            } else if (data) {
               const typedProfile: Profile = {
                 id: data.id,
                 name: data.name,
@@ -102,7 +109,7 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const signUp = async (email: string, password: string, name: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -112,6 +119,19 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
         }
       }
     });
+    
+    // Handle the case where user already exists
+    if (error) {
+      if (error.message.includes('User already registered') || 
+          error.message.includes('duplicate key') ||
+          error.message.includes('already been registered')) {
+        return { 
+          error: { 
+            message: 'An account with this email already exists. Please try signing in instead.' 
+          } 
+        };
+      }
+    }
     
     return { error };
   };
@@ -134,6 +154,17 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
         redirectTo: redirectUrl
       }
     });
+    
+    // Provide a more helpful error message for Google auth issues
+    if (error) {
+      if (error.message.includes('provider is not enabled')) {
+        return { 
+          error: { 
+            message: 'Google sign-in is not enabled. Please contact the administrator or use email/password instead.' 
+          } 
+        };
+      }
+    }
     
     return { error };
   };
