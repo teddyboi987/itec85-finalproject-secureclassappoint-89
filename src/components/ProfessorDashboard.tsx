@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
@@ -10,10 +9,14 @@ import AllAppointments from './professor/AllAppointments';
 
 const ProfessorDashboard: React.FC = () => {
   const { profile } = useSupabaseAuth();
+  const [statsRefreshKey, setStatsRefreshKey] = useState(0);
   const { appointments, isLoading, updateAppointmentStatus } = useProfessorAppointments(profile?.subject);
 
   const handleAppointmentAction = async (appointmentId: string, action: 'approved' | 'rejected') => {
-    await updateAppointmentStatus(appointmentId, action);
+    const success = await updateAppointmentStatus(appointmentId, action);
+    if (success) {
+      setStatsRefreshKey(prev => prev + 1); // Force stats refresh
+    }
   };
 
   const professorSubject = profile?.subject || '';
@@ -60,7 +63,10 @@ const ProfessorDashboard: React.FC = () => {
           </p>
         </div>
 
-        <ProfessorStatsCards appointments={appointments} />
+        <ProfessorStatsCards 
+          appointments={appointments} 
+          refreshKey={statsRefreshKey}
+        />
         
         <PendingAppointments 
           pendingAppointments={pendingAppointments}
