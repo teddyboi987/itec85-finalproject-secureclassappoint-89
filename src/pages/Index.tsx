@@ -1,12 +1,45 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React, { useState } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import LoginForm from '@/components/LoginForm';
+import RegisterForm from '@/components/RegisterForm';
+import Header from '@/components/Header';
+import StudentDashboard from '@/components/StudentDashboard';
+import ProfessorDashboard from '@/components/ProfessorDashboard';
+import AdminDashboard from '@/components/AdminDashboard';
 
 const Index = () => {
+  const { user } = useAuth();
+  const [showRegister, setShowRegister] = useState(false);
+
+  const renderDashboard = () => {
+    switch (user?.role) {
+      case 'student':
+        return <StudentDashboard />;
+      case 'professor':
+        return <ProfessorDashboard />;
+      case 'admin':
+        return <AdminDashboard />;
+      default:
+        return null;
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen bg-background">
+      {user && <Header />}
+      
+      {!user ? (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          {showRegister ? (
+            <RegisterForm onSwitchToLogin={() => setShowRegister(false)} />
+          ) : (
+            <LoginForm onSwitchToRegister={() => setShowRegister(true)} />
+          )}
+        </div>
+      ) : (
+        renderDashboard()
+      )}
     </div>
   );
 };
