@@ -38,7 +38,9 @@ const ProfessorAccountManager: React.FC<ProfessorAccountManagerProps> = ({ onPro
         console.error('Error fetching approved professors:', approvedError);
         setApprovedProfessors([]);
       } else {
-        setApprovedProfessors((approved as ApprovedProfessor[]) || []);
+        // Use unknown first, then cast to avoid TypeScript errors
+        const approvedData = approved as unknown;
+        setApprovedProfessors((approvedData as ApprovedProfessor[]) || []);
       }
 
       // Fetch registered professors
