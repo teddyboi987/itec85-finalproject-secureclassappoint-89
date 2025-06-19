@@ -49,17 +49,6 @@ export const authService = {
       password,
     });
     
-    if (error) {
-      // Handle email not confirmed error specifically for professors
-      if (error.message.includes('Email not confirmed') && email.includes('@cvsu.edu.ph')) {
-        return { 
-          error: { 
-            message: 'Professor account email confirmation issue. Please contact the administrator.' 
-          } 
-        };
-      }
-    }
-    
     return { error };
   },
 
