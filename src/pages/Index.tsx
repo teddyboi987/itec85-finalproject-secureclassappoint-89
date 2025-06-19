@@ -1,19 +1,30 @@
 
 import React, { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import LoginForm from '@/components/LoginForm';
-import RegisterForm from '@/components/RegisterForm';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
+import AuthPage from '@/components/AuthPage';
 import Header from '@/components/Header';
 import StudentDashboard from '@/components/StudentDashboard';
 import ProfessorDashboard from '@/components/ProfessorDashboard';
 import AdminDashboard from '@/components/AdminDashboard';
 
 const Index = () => {
-  const { user } = useAuth();
-  const [showRegister, setShowRegister] = useState(false);
+  const { user, profile, isLoading } = useSupabaseAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   const renderDashboard = () => {
-    switch (user?.role) {
+    if (!profile) return null;
+    
+    switch (profile.role) {
       case 'student':
         return <StudentDashboard />;
       case 'professor':
@@ -27,16 +38,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {user && <Header />}
+      {user && profile && <Header />}
       
-      {!user ? (
-        <div className="min-h-screen flex items-center justify-center p-4">
-          {showRegister ? (
-            <RegisterForm onSwitchToLogin={() => setShowRegister(false)} />
-          ) : (
-            <LoginForm onSwitchToRegister={() => setShowRegister(true)} />
-          )}
-        </div>
+      {!user || !profile ? (
+        <AuthPage />
       ) : (
         renderDashboard()
       )}

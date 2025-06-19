@@ -1,11 +1,41 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { LogOut, User, GraduationCap } from 'lucide-react';
 
 const Header: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { profile, signOut } = useSupabaseAuth();
+
+  const getGreeting = () => {
+    if (!profile) return '';
+    
+    switch (profile.role) {
+      case 'student':
+        return `Welcome, ${profile.name}`;
+      case 'professor':
+        return `Welcome, Prof. ${profile.name}`;
+      case 'admin':
+        return `Welcome, Admin ${profile.name}`;
+      default:
+        return `Welcome, ${profile.name}`;
+    }
+  };
+
+  const getRoleDisplay = () => {
+    if (!profile) return '';
+    
+    switch (profile.role) {
+      case 'student':
+        return 'Student';
+      case 'professor':
+        return `Professor - ${profile.subject || 'Various Subjects'}`;
+      case 'admin':
+        return 'Administrator';
+      default:
+        return profile.role;
+    }
+  };
 
   return (
     <header className="cvsu-gradient text-white shadow-lg">
@@ -18,28 +48,28 @@ const Header: React.FC = () => {
             <h1 className="text-xl font-bold">SecureClass Appoint</h1>
             <p className="text-xs opacity-90">Cavite State University</p>
           </div>
-          {user && (
+          {profile && (
             <div className="ml-4 bg-white/10 px-3 py-1 rounded-full">
               <p className="text-sm">
-                Welcome, {user.name} 
+                {getGreeting()}
                 <span className="ml-1 text-xs opacity-75">
-                  ({user.role}{user.subject ? ` - ${user.subject}` : ''})
+                  ({getRoleDisplay()})
                 </span>
               </p>
             </div>
           )}
         </div>
         
-        {user && (
+        {profile && (
           <div className="flex items-center space-x-4">
             <div className="hidden md:flex items-center space-x-2 bg-white/10 px-3 py-1 rounded-full">
               <User className="h-4 w-4" />
-              <span className="text-sm">{user.email}</span>
+              <span className="text-sm">{profile.email}</span>
             </div>
             <Button
               variant="secondary"
               size="sm"
-              onClick={logout}
+              onClick={signOut}
               className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 text-white border-white/30"
             >
               <LogOut className="h-4 w-4" />
