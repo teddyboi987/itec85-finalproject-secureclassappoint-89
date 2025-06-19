@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, CheckCircle, XCircle, User, BookOpen } from 'lucide-react';
 import { Appointment } from '@/types/auth';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 
 const ProfessorDashboard: React.FC = () => {
-  const { user } = useAuth();
-  const professorSubject = user?.subject || '';
+  const { profile } = useSupabaseAuth();
+  const professorSubject = profile?.subject || '';
 
   // Mock appointments - dynamically filter by professor's actual subject
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -20,9 +20,9 @@ const ProfessorDashboard: React.FC = () => {
       {
         id: '1',
         studentId: '1',
-        professorId: user?.id || '2',
+        professorId: profile?.id || '2',
         studentName: 'John Student',
-        professorName: user?.name || 'Prof. Santos',
+        professorName: profile?.name || 'Prof. Santos',
         subject: professorSubject, // Use actual professor's subject
         date: '2024-12-20',
         time: '10:00',
@@ -31,9 +31,9 @@ const ProfessorDashboard: React.FC = () => {
       {
         id: '2',
         studentId: '4',
-        professorId: user?.id || '2',
+        professorId: profile?.id || '2',
         studentName: 'Jane Student',
-        professorName: user?.name || 'Prof. Santos',
+        professorName: profile?.name || 'Prof. Santos',
         subject: professorSubject, // Use actual professor's subject
         date: '2024-12-21',
         time: '14:00',
@@ -45,7 +45,7 @@ const ProfessorDashboard: React.FC = () => {
     if (professorSubject) {
       setAppointments(initialAppointments);
     }
-  }, [user, professorSubject]);
+  }, [profile, professorSubject]);
 
   const handleAppointmentAction = (appointmentId: string, action: 'approved' | 'rejected') => {
     setAppointments(prev =>
@@ -69,7 +69,7 @@ const ProfessorDashboard: React.FC = () => {
   const professorAppointments = appointments.filter(
     appointment => 
       appointment.subject === professorSubject && 
-      appointment.professorId === user?.id
+      appointment.professorId === profile?.id
   );
 
   const pendingAppointments = professorAppointments.filter(a => a.status === 'pending');

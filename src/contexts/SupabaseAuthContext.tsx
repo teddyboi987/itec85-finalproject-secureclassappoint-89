@@ -46,7 +46,17 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
               .eq('id', session.user.id)
               .single();
             
-            setProfile(profileData);
+            if (profileData) {
+              // Ensure the role is properly typed
+              const typedProfile: Profile = {
+                id: profileData.id,
+                name: profileData.name,
+                email: profileData.email,
+                role: profileData.role as 'student' | 'professor' | 'admin',
+                subject: profileData.subject || undefined
+              };
+              setProfile(typedProfile);
+            }
           }, 0);
         } else {
           setProfile(null);
@@ -68,7 +78,19 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
           .select('*')
           .eq('id', session.user.id)
           .single()
-          .then(({ data }) => setProfile(data));
+          .then(({ data }) => {
+            if (data) {
+              // Ensure the role is properly typed
+              const typedProfile: Profile = {
+                id: data.id,
+                name: data.name,
+                email: data.email,
+                role: data.role as 'student' | 'professor' | 'admin',
+                subject: data.subject || undefined
+              };
+              setProfile(typedProfile);
+            }
+          });
       }
       
       setIsLoading(false);

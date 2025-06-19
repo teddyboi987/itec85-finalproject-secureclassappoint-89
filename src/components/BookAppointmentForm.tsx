@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Appointment } from '@/types/auth';
-import { useAuth } from '@/contexts/AuthContext';
+import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { subjects, getProfessorBySubject } from '@/data/subjects';
 
 interface BookAppointmentFormProps {
@@ -15,7 +15,7 @@ interface BookAppointmentFormProps {
 }
 
 const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, onCancel }) => {
-  const { user } = useAuth();
+  const { user } = useSupabaseAuth();
   const [selectedSubject, setSelectedSubject] = useState('');
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
