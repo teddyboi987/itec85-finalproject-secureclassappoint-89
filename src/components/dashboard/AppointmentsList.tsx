@@ -2,7 +2,10 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, BookOpen } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Clock, BookOpen, Trash2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface DatabaseAppointment {
   id: string;
@@ -17,9 +20,47 @@ interface DatabaseAppointment {
 
 interface AppointmentsListProps {
   appointments: DatabaseAppointment[];
+  onAppointmentDeleted?: () => void;
 }
 
-const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments }) => {
+const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onAppointmentDeleted }) => {
+  const { toast } = useToast();
+
+  const handleDeleteAppointment = async (appointmentId: string) => {
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', appointmentId);
+
+      if (error) {
+        console.error('Error deleting appointment:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete appointment",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Appointment request deleted successfully",
+      });
+
+      if (onAppointmentDeleted) {
+        onAppointmentDeleted();
+      }
+    } catch (err) {
+      console.error('Unexpected error deleting appointment:', err);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved': return 'bg-green-600 hover:bg-green-700';
@@ -53,7 +94,7 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments }) => 
             {appointments.map((appointment) => (
               <div key={appointment.id} className="border border-primary/20 rounded-lg p-4 bg-white">
                 <div className="flex justify-between items-start">
-                  <div className="space-y-2">
+                  <div className="space-y-2 flex-1">
                     <h3 className="font-semibold text-primary">{appointment.subject}</h3>
                     <p className="text-sm text-muted-foreground">
                       Professor: {extractProfessorName(appointment.subject)}
@@ -69,9 +110,21 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments }) => 
                       </div>
                     </div>
                   </div>
-                  <Badge className={getStatusColor(appointment.status)}>
-                    {appointment.status}
-                  </Badge>
+                  <div className="flex items-center space-x-2">
+                    <Badge className={getStatusColor(appointment.status)}>
+                      {appointment.status}
+                    </Badge>
+                    {appointment.status === 'pending' && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleDeleteAppointment(appointment.id)}
+                        className="border-red-300 text-red-600 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             ))}

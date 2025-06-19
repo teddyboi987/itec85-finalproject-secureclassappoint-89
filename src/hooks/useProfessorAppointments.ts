@@ -23,9 +23,13 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
   const { toast } = useToast();
 
   const fetchAppointments = async () => {
-    if (!professorSubject) return;
+    if (!professorSubject) {
+      setIsLoading(false);
+      return;
+    }
 
     try {
+      // Fetch appointments where the subject contains the professor's subject
       const { data, error } = await supabase
         .from('appointments')
         .select(`
@@ -45,6 +49,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         return;
       }
 
+      console.log('Fetched professor appointments:', data);
       setAppointments(data || []);
     } catch (err) {
       console.error('Unexpected error fetching appointments:', err);
