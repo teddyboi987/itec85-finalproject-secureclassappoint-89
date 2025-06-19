@@ -18,9 +18,16 @@ export const useAppointments = (userId: string | undefined) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchAppointments = async () => {
-    if (!userId) return;
+    if (!userId) {
+      setAppointments([]);
+      setIsLoading(false);
+      return;
+    }
 
     try {
+      setIsLoading(true);
+      console.log('Fetching appointments for user:', userId);
+      
       const { data, error } = await supabase
         .from('appointments')
         .select('*')
@@ -29,13 +36,15 @@ export const useAppointments = (userId: string | undefined) => {
 
       if (error) {
         console.error('Error fetching appointments:', error);
+        setAppointments([]);
         return;
       }
 
-      console.log('Fetched appointments:', data);
+      console.log('Fresh appointments fetched:', data);
       setAppointments(data || []);
     } catch (err) {
       console.error('Unexpected error fetching appointments:', err);
+      setAppointments([]);
     } finally {
       setIsLoading(false);
     }

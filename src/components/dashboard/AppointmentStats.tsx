@@ -19,10 +19,16 @@ interface AppointmentStatsProps {
 }
 
 const AppointmentStats: React.FC<AppointmentStatsProps> = ({ appointments }) => {
-  const totalAppointments = appointments.length;
-  const pendingCount = appointments.filter(a => a.status === 'pending').length;
-  const approvedCount = appointments.filter(a => a.status === 'approved').length;
-  const rejectedCount = appointments.filter(a => a.status === 'rejected').length;
+  // Filter out any undefined or null appointments and ensure we're working with a clean array
+  const validAppointments = appointments?.filter(Boolean) || [];
+  
+  const totalAppointments = validAppointments.length;
+  const pendingCount = validAppointments.filter(a => a.status === 'pending').length;
+  const approvedCount = validAppointments.filter(a => a.status === 'approved').length;
+  const rejectedCount = validAppointments.filter(a => a.status === 'rejected').length;
+
+  console.log('AppointmentStats - Valid appointments:', validAppointments);
+  console.log('AppointmentStats - Stats:', { totalAppointments, pendingCount, approvedCount, rejectedCount });
 
   return (
     <Card className="cvsu-card bg-white/80 backdrop-blur-sm">
