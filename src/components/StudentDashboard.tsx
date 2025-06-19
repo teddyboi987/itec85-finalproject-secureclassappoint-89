@@ -72,6 +72,24 @@ const StudentDashboard: React.FC = () => {
     }
   };
 
+  const getRecentActivity = () => {
+    if (appointments.length === 0) return 'No appointment requests yet';
+    
+    const mostRecent = appointments[0];
+    const createdDate = new Date(mostRecent.created_at);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) {
+      return `Requested ${mostRecent.subject} appointment today`;
+    } else if (diffDays <= 7) {
+      return `Requested ${mostRecent.subject} appointment ${diffDays} days ago`;
+    } else {
+      return `Last appointment request: ${createdDate.toLocaleDateString()}`;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 flex items-center justify-center">
@@ -144,10 +162,7 @@ const StudentDashboard: React.FC = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                {appointments.length > 0 
-                  ? `Last appointment request: ${new Date(appointments[0].created_at).toLocaleDateString()}`
-                  : 'No appointment requests yet'
-                }
+                {getRecentActivity()}
               </p>
             </CardContent>
           </Card>

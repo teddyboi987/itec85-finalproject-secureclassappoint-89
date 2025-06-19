@@ -44,29 +44,42 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
     setIsSubmitting(true);
 
     try {
-      // Find professor for the selected subject from Supabase database
+      // First, let's try to find professor by exact subject match
       console.log('Looking for professor with subject:', selectedSubject);
       
-      const { data: professorProfile, error: professorError } = await supabase
+      let { data: professorProfile, error: professorError } = await supabase
         .from('profiles')
         .select('id, name, subject, email')
         .eq('role', 'professor')
         .eq('subject', selectedSubject)
-        .single();
+        .maybeSingle();
 
-      if (professorError || !professorProfile) {
-        console.error('Professor lookup error:', professorError);
-        console.log('Available professors query:');
-        
-        // Debug: Let's see what professors are available
-        const { data: allProfessors, error: debugError } = await supabase
+      // If no exact match, try case-insensitive search
+      if (!professorProfile) {
+        console.log('No exact match found, trying case-insensitive search...');
+        const { data: allProfessors, error: allProfError } = await supabase
           .from('profiles')
-          .select('id, name, subject, email, role')
+          .select('id, name, subject, email')
           .eq('role', 'professor');
+
+        if (!allProfError && allProfessors) {
+          professorProfile = allProfessors.find(prof => 
+            prof.subject?.toLowerCase() === selectedSubject.toLowerCase()
+          ) || null;
+        }
+      }
+
+      // If still no professor found, let's debug what's available
+      if (!professorProfile) {
+        console.log('Still no professor found, checking all professors in database...');
+        const { data: debugProfessors, error: debugError } = await supabase
+          .from('profiles')
+          .select('id, name, subject, email, role');
         
-        console.log('All professors in database:', allProfessors);
+        console.log('All profiles in database:', debugProfessors);
+        console.log('Profiles with professor role:', debugProfessors?.filter(p => p.role === 'professor'));
         
-        setError(`No professor found for ${selectedSubject}. Please contact administrator.`);
+        setError(`No professor found for ${selectedSubject}. Available professors: ${debugProfessors?.filter(p => p.role === 'professor').map(p => p.subject).join(', ') || 'None'}`);
         setIsSubmitting(false);
         return;
       }
