@@ -55,17 +55,20 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
     // Simulate API call
     await new Promise(resolve => setTimeout(resolve, 1000));
 
+    // Create appointment with correct subject-professor mapping
     const newAppointment: Appointment = {
       id: Date.now().toString(),
       studentId: user!.id,
       professorId: professor.id,
       studentName: user!.name,
       professorName: professor.name,
-      subject: selectedSubject,
+      subject: selectedSubject, // This ensures the correct subject is stored
       date,
       time,
       status: 'pending'
     };
+
+    console.log('Creating appointment:', newAppointment); // Debug log
 
     onSuccess(newAppointment);
     setIsSubmitting(false);
@@ -95,7 +98,7 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
               className="w-full p-3 border border-primary/20 rounded-md focus:border-primary focus:ring-1 focus:ring-primary"
               disabled={isSubmitting}
             >
-              <option value="">Choose a subject...</option>
+              <option value="">Choose a Computer Science subject...</option>
               {subjects.map((subject) => (
                 <option key={subject.name} value={subject.name}>
                   {subject.name}
@@ -103,9 +106,10 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
               ))}
             </select>
             {selectedProfessor && (
-              <p className="text-sm text-primary bg-green-50 p-2 rounded">
-                Professor: {selectedProfessor.name}
-              </p>
+              <div className="text-sm text-primary bg-green-50 p-3 rounded border border-primary/20">
+                <p className="font-medium">Professor: {selectedProfessor.name}</p>
+                <p className="text-xs text-primary/70">Subject: {selectedSubject}</p>
+              </div>
             )}
           </div>
           
@@ -124,14 +128,23 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
           
           <div className="space-y-2">
             <Label htmlFor="time">Preferred Time</Label>
-            <Input
+            <select
               id="time"
-              type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
+              className="w-full p-3 border border-primary/20 rounded-md focus:border-primary focus:ring-1 focus:ring-primary"
               disabled={isSubmitting}
-              className="border-primary/20 focus:border-primary"
-            />
+            >
+              <option value="">Select time...</option>
+              <option value="08:00">8:00 AM</option>
+              <option value="09:00">9:00 AM</option>
+              <option value="10:00">10:00 AM</option>
+              <option value="11:00">11:00 AM</option>
+              <option value="13:00">1:00 PM</option>
+              <option value="14:00">2:00 PM</option>
+              <option value="15:00">3:00 PM</option>
+              <option value="16:00">4:00 PM</option>
+            </select>
           </div>
           
           <div className="flex space-x-2">

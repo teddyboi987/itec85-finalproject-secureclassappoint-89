@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,31 +11,41 @@ const ProfessorDashboard: React.FC = () => {
   const { user } = useAuth();
   const professorSubject = user?.subject || '';
 
-  // Mock appointments - filter by professor's subject
-  const [appointments, setAppointments] = useState<Appointment[]>([
-    {
-      id: '1',
-      studentId: '1',
-      professorId: user?.id || '2',
-      studentName: 'John Student',
-      professorName: user?.name || 'Prof. Santos',
-      subject: professorSubject,
-      date: '2024-01-15',
-      time: '10:00',
-      status: 'pending'
-    },
-    {
-      id: '2',
-      studentId: '4',
-      professorId: user?.id || '2',
-      studentName: 'Jane Student',
-      professorName: user?.name || 'Prof. Santos',
-      subject: professorSubject,
-      date: '2024-01-16',
-      time: '14:00',
-      status: 'pending'
+  // Mock appointments - dynamically filter by professor's actual subject
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+
+  useEffect(() => {
+    // Initialize appointments with correct subject mapping
+    const initialAppointments: Appointment[] = [
+      {
+        id: '1',
+        studentId: '1',
+        professorId: user?.id || '2',
+        studentName: 'John Student',
+        professorName: user?.name || 'Prof. Santos',
+        subject: professorSubject, // Use actual professor's subject
+        date: '2024-12-20',
+        time: '10:00',
+        status: 'pending'
+      },
+      {
+        id: '2',
+        studentId: '4',
+        professorId: user?.id || '2',
+        studentName: 'Jane Student',
+        professorName: user?.name || 'Prof. Santos',
+        subject: professorSubject, // Use actual professor's subject
+        date: '2024-12-21',
+        time: '14:00',
+        status: 'pending'
+      }
+    ];
+
+    // Only show appointments if professor has a subject assigned
+    if (professorSubject) {
+      setAppointments(initialAppointments);
     }
-  ]);
+  }, [user, professorSubject]);
 
   const handleAppointmentAction = (appointmentId: string, action: 'approved' | 'rejected') => {
     setAppointments(prev =>
@@ -55,13 +65,30 @@ const ProfessorDashboard: React.FC = () => {
     }
   };
 
-  // Filter appointments for this professor's subject only
+  // Filter appointments for this professor's subject and professor ID
   const professorAppointments = appointments.filter(
-    appointment => appointment.subject === professorSubject && appointment.professorId === user?.id
+    appointment => 
+      appointment.subject === professorSubject && 
+      appointment.professorId === user?.id
   );
 
   const pendingAppointments = professorAppointments.filter(a => a.status === 'pending');
   const approvedAppointments = professorAppointments.filter(a => a.status === 'approved');
+  const rejectedAppointments = professorAppointments.filter(a => a.status === 'rejected');
+
+  if (!professorSubject) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 flex items-center justify-center">
+        <Card className="cvsu-card">
+          <CardContent className="p-8 text-center">
+            <BookOpen className="h-16 w-16 text-primary/40 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-primary mb-2">No Subject Assigned</h2>
+            <p className="text-muted-foreground">Please contact the administrator to assign a subject to your account.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50">
@@ -121,10 +148,10 @@ const ProfessorDashboard: React.FC = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Subject</p>
-                  <p className="text-lg font-bold text-primary truncate">{professorSubject}</p>
+                  <p className="text-sm text-muted-foreground">Rejected</p>
+                  <p className="text-2xl font-bold text-red-600">{rejectedAppointments.length}</p>
                 </div>
-                <Calendar className="h-8 w-8 text-primary/60" />
+                <XCircle className="h-8 w-8 text-red-600" />
               </div>
             </CardContent>
           </Card>
