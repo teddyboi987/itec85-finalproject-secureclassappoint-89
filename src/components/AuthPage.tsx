@@ -148,6 +148,7 @@ const AuthPage: React.FC = () => {
                     disabled={isLoading}
                     className="border-primary/20 focus:border-primary"
                     placeholder="Enter your full name"
+                    autoComplete="name"
                   />
                 </div>
               )}
@@ -163,6 +164,7 @@ const AuthPage: React.FC = () => {
                   disabled={isLoading}
                   className="border-primary/20 focus:border-primary"
                   placeholder="Enter your email address"
+                  autoComplete="email"
                 />
               </div>
               
@@ -177,6 +179,7 @@ const AuthPage: React.FC = () => {
                   disabled={isLoading}
                   className="border-primary/20 focus:border-primary"
                   placeholder={isProfessorEmail && !isLogin ? "Use: prof123" : "Enter your password"}
+                  autoComplete={isLogin ? "current-password" : "new-password"}
                 />
                 {isProfessorEmail && !isLogin && (
                   <p className="text-xs text-red-600">

@@ -25,13 +25,8 @@ interface AppointmentsListProps {
 
 const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onAppointmentDeleted }) => {
   const { toast } = useToast();
-  const [localAppointments, setLocalAppointments] = useState(appointments);
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
-
-  // Update local state when appointments prop changes
-  React.useEffect(() => {
-    setLocalAppointments(appointments);
-  }, [appointments]);
 
   const handleDeleteAppointment = async (appointmentId: string) => {
     setDeletingIds(prev => new Set(prev).add(appointmentId));
@@ -52,15 +47,15 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
         return;
       }
 
-      // Remove from local state immediately for instant UI feedback
-      setLocalAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
+      // Mark as deleted immediately for instant UI feedback
+      setDeletedIds(prev => new Set(prev).add(appointmentId));
 
       toast({
         title: "Success",
         description: "Appointment request deleted successfully",
       });
 
-      // Also call the parent callback to refresh data
+      // Call the parent callback to refresh data
       if (onAppointmentDeleted) {
         onAppointmentDeleted();
       }
@@ -94,6 +89,9 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
     return match ? match[1] : 'Unknown Professor';
   };
 
+  // Filter out deleted appointments
+  const visibleAppointments = appointments.filter(appointment => !deletedIds.has(appointment.id));
+
   return (
     <Card className="cvsu-card mt-6 bg-white/90 backdrop-blur-sm">
       <CardHeader>
@@ -101,7 +99,7 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
         <CardDescription>View and manage your appointment requests</CardDescription>
       </CardHeader>
       <CardContent>
-        {localAppointments.length === 0 ? (
+        {visibleAppointments.length === 0 ? (
           <div className="text-center py-8">
             <BookOpen className="h-12 w-12 text-primary/40 mx-auto mb-4" />
             <p className="text-muted-foreground py-4">
@@ -110,7 +108,7 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
           </div>
         ) : (
           <div className="space-y-4">
-            {localAppointments.map((appointment) => (
+            {visibleAppointments.map((appointment) => (
               <div key={appointment.id} className="border border-primary/20 rounded-lg p-4 bg-white">
                 <div className="flex justify-between items-start">
                   <div className="space-y-2 flex-1">
