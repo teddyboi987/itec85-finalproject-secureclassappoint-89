@@ -28,16 +28,17 @@ const ProfessorAccountManager: React.FC<ProfessorAccountManagerProps> = ({ onPro
 
   const fetchData = async () => {
     try {
-      // Fetch approved professors
+      // Fetch approved professors using raw query since the table type doesn't exist yet
       const { data: approved, error: approvedError } = await supabase
-        .from('approved_professors')
+        .from('approved_professors' as any)
         .select('*')
         .order('name');
 
       if (approvedError) {
         console.error('Error fetching approved professors:', approvedError);
+        setApprovedProfessors([]);
       } else {
-        setApprovedProfessors(approved || []);
+        setApprovedProfessors((approved as ApprovedProfessor[]) || []);
       }
 
       // Fetch registered professors
@@ -49,11 +50,14 @@ const ProfessorAccountManager: React.FC<ProfessorAccountManagerProps> = ({ onPro
 
       if (registeredError) {
         console.error('Error fetching registered professors:', registeredError);
+        setRegisteredProfessors([]);
       } else {
         setRegisteredProfessors(registered || []);
       }
     } catch (err) {
       console.error('Unexpected error fetching data:', err);
+      setApprovedProfessors([]);
+      setRegisteredProfessors([]);
     } finally {
       setIsLoading(false);
     }
