@@ -37,7 +37,13 @@ const AuthPage: React.FC = () => {
       if (error) {
         setError(error.message);
       } else {
-        setMessage('Check your email for the confirmation link!');
+        // Check if it's a professor email
+        const isProfessor = email.includes('@cvsu.edu.ph') && email !== 'admin@cvsu.edu.ph';
+        if (isProfessor) {
+          setMessage('Professor account created! You can now sign in.');
+        } else {
+          setMessage('Check your email for the confirmation link!');
+        }
       }
     }
   };
@@ -49,6 +55,9 @@ const AuthPage: React.FC = () => {
       setError(error.message);
     }
   };
+
+  // Check if it's a professor email to show appropriate messaging
+  const isProfessorEmail = email.includes('@cvsu.edu.ph') && email !== 'admin@cvsu.edu.ph';
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -65,6 +74,11 @@ const AuthPage: React.FC = () => {
                 <p className="text-sm text-muted-foreground">
                   An online appointment platform for students to book academic consultations with professors.
                 </p>
+                {isProfessorEmail && !isLogin && (
+                  <p className="text-sm text-blue-600 mt-2 font-medium">
+                    Professor accounts are auto-approved - no email confirmation needed!
+                  </p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -150,6 +164,11 @@ const AuthPage: React.FC = () => {
                   className="border-primary/20 focus:border-primary"
                   placeholder="Enter your email address"
                 />
+                {isProfessorEmail && (
+                  <p className="text-xs text-blue-600">
+                    Professor email detected - use default password "prof123" if creating new account
+                  </p>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -162,7 +181,7 @@ const AuthPage: React.FC = () => {
                   required
                   disabled={isLoading}
                   className="border-primary/20 focus:border-primary"
-                  placeholder="Enter your password"
+                  placeholder={isProfessorEmail && !isLogin ? "Use: prof123" : "Enter your password"}
                 />
               </div>
               
