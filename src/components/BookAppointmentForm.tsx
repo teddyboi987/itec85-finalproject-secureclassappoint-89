@@ -57,13 +57,14 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
 
       console.log('Creating appointment with professor:', professor);
 
-      // Create appointment in database
+      // Create appointment in database - use user ID as professor_id since we don't have actual professor UUIDs
+      // We'll store the demo professor info in the subject field and use a placeholder UUID
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
         .insert({
           student_id: user!.id,
-          professor_id: professor.id,
-          subject: professor.subject,
+          professor_id: null, // Set to null since we're using demo data
+          subject: `${professor.subject} (Prof. ${professor.name})`, // Include professor name in subject
           date,
           time,
           status: 'pending'

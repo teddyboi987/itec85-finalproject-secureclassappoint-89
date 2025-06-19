@@ -12,7 +12,7 @@ import { professors } from '@/data/subjects';
 interface DatabaseAppointment {
   id: string;
   student_id: string;
-  professor_id: string;
+  professor_id: string | null;
   subject: string;
   date: string;
   time: string;
@@ -67,9 +67,10 @@ const StudentDashboard: React.FC = () => {
     }
   };
 
-  const getProfessorName = (professorId: string) => {
-    const professor = professors.find(p => p.id === professorId);
-    return professor ? professor.name : 'Unknown Professor';
+  const extractProfessorName = (subject: string) => {
+    // Extract professor name from subject string like "Mathematics (Prof. Dr. John Smith)"
+    const match = subject.match(/\(Prof\. ([^)]+)\)/);
+    return match ? match[1] : 'Unknown Professor';
   };
 
   const getRecentActivity = () => {
@@ -82,9 +83,9 @@ const StudentDashboard: React.FC = () => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays === 1) {
-      return `Requested ${mostRecent.subject} appointment today`;
+      return `Requested appointment today`;
     } else if (diffDays <= 7) {
-      return `Requested ${mostRecent.subject} appointment ${diffDays} days ago`;
+      return `Requested appointment ${diffDays} days ago`;
     } else {
       return `Last appointment request: ${createdDate.toLocaleDateString()}`;
     }
@@ -190,7 +191,7 @@ const StudentDashboard: React.FC = () => {
                       <div className="space-y-2">
                         <h3 className="font-semibold text-primary">{appointment.subject}</h3>
                         <p className="text-sm text-muted-foreground">
-                          Professor: {getProfessorName(appointment.professor_id)}
+                          Professor: {extractProfessorName(appointment.subject)}
                         </p>
                         <div className="flex items-center space-x-4 text-sm">
                           <div className="flex items-center space-x-1">
