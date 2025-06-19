@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, Calendar, BookOpen, TrendingUp, GraduationCap, Shield } from 'lucide-react';
 import { User, Appointment } from '@/types/auth';
 import { subjects } from '@/data/subjects';
+import ProfessorAccountManager from './ProfessorAccountManager';
 
 const AdminDashboard: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -155,10 +155,11 @@ const AdminDashboard: React.FC = () => {
         </div>
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 bg-white/80 backdrop-blur-sm">
+          <TabsList className="grid w-full grid-cols-4 bg-white/80 backdrop-blur-sm">
             <TabsTrigger value="users" className="data-[state=active]:bg-primary data-[state=active]:text-white">User Management</TabsTrigger>
             <TabsTrigger value="appointments" className="data-[state=active]:bg-primary data-[state=active]:text-white">Appointments</TabsTrigger>
             <TabsTrigger value="subjects" className="data-[state=active]:bg-primary data-[state=active]:text-white">Subjects</TabsTrigger>
+            <TabsTrigger value="professors" className="data-[state=active]:bg-primary data-[state=active]:text-white">Create Professors</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -190,7 +191,6 @@ const AdminDashboard: React.FC = () => {
 
           <TabsContent value="appointments">
             <div className="space-y-6">
-              {/* Appointment Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="cvsu-card bg-white/80 backdrop-blur-sm">
                   <CardContent className="p-4">
@@ -231,7 +231,6 @@ const AdminDashboard: React.FC = () => {
                 </Card>
               </div>
 
-              {/* All Appointments */}
               <Card className="cvsu-card bg-white/90 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle className="text-primary">All Appointments ({appointments.length})</CardTitle>
@@ -292,6 +291,10 @@ const AdminDashboard: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="professors">
+            <ProfessorAccountManager />
           </TabsContent>
         </Tabs>
       </div>
