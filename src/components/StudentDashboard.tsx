@@ -16,10 +16,14 @@ const StudentDashboard: React.FC = () => {
 
   const handleBookingSuccess = () => {
     setShowBookingForm(false);
-    refetchAppointments();
+    // Add a small delay to ensure the appointment is saved before refetching
+    setTimeout(() => {
+      refetchAppointments();
+    }, 500);
   };
 
   const handleAppointmentDeleted = () => {
+    // Refetch appointments immediately after deletion
     refetchAppointments();
   };
 

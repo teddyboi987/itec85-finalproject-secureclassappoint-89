@@ -19,6 +19,10 @@ interface AppointmentStatsProps {
 }
 
 const AppointmentStats: React.FC<AppointmentStatsProps> = ({ appointments }) => {
+  const pendingCount = appointments.filter(a => a.status === 'pending').length;
+  const approvedCount = appointments.filter(a => a.status === 'approved').length;
+  const rejectedCount = appointments.filter(a => a.status === 'rejected').length;
+
   return (
     <Card className="cvsu-card bg-white/80 backdrop-blur-sm">
       <CardHeader>
@@ -34,13 +38,19 @@ const AppointmentStats: React.FC<AppointmentStatsProps> = ({ appointments }) => 
         <div className="flex justify-between">
           <span>Pending:</span>
           <Badge className="bg-yellow-600">
-            {appointments.filter(a => a.status === 'pending').length}
+            {pendingCount}
           </Badge>
         </div>
         <div className="flex justify-between">
           <span>Approved:</span>
           <Badge className="bg-green-600">
-            {appointments.filter(a => a.status === 'approved').length}
+            {approvedCount}
+          </Badge>
+        </div>
+        <div className="flex justify-between">
+          <span>Rejected:</span>
+          <Badge className="bg-red-600">
+            {rejectedCount}
           </Badge>
         </div>
       </CardContent>
