@@ -25,14 +25,13 @@ interface AppointmentsListProps {
 
 const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onAppointmentDeleted }) => {
   const { toast } = useToast();
+  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
 
   const handleDeleteAppointment = async (appointmentId: string) => {
     setDeletingIds(prev => new Set(prev).add(appointmentId));
     
     try {
-      console.log('Deleting appointment:', appointmentId);
-      
       const { error } = await supabase
         .from('appointments')
         .delete()
@@ -48,7 +47,8 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
         return;
       }
 
-      console.log('Appointment deleted successfully');
+      // Mark as deleted immediately for instant UI feedback
+      setDeletedIds(prev => new Set(prev).add(appointmentId));
 
       toast({
         title: "Success",
@@ -89,6 +89,9 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
     return match ? match[1] : 'Unknown Professor';
   };
 
+  // Filter out deleted appointments
+  const visibleAppointments = appointments.filter(appointment => !deletedIds.has(appointment.id));
+
   return (
     <Card className="cvsu-card mt-6 bg-white/90 backdrop-blur-sm">
       <CardHeader>
@@ -96,7 +99,7 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
         <CardDescription>View and manage your appointment requests</CardDescription>
       </CardHeader>
       <CardContent>
-        {appointments.length === 0 ? (
+        {visibleAppointments.length === 0 ? (
           <div className="text-center py-8">
             <BookOpen className="h-12 w-12 text-primary/40 mx-auto mb-4" />
             <p className="text-muted-foreground py-4">
@@ -105,7 +108,7 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
           </div>
         ) : (
           <div className="space-y-4">
-            {appointments.map((appointment) => (
+            {visibleAppointments.map((appointment) => (
               <div key={appointment.id} className="border border-primary/20 rounded-lg p-4 bg-white">
                 <div className="flex justify-between items-start">
                   <div className="space-y-2 flex-1">

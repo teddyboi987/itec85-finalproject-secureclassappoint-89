@@ -24,7 +24,6 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
   const fetchAppointments = async () => {
     if (!professorSubject) {
-      console.log('No professor subject provided');
       setIsLoading(false);
       return;
     }
@@ -32,13 +31,14 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
     try {
       console.log('Fetching appointments for professor subject:', professorSubject);
       
-      // Fetch all appointments first, then filter on the client side for better debugging
+      // Fetch appointments where the subject contains the professor's subject
       const { data, error } = await supabase
         .from('appointments')
         .select(`
           *,
           student_profile:profiles!appointments_student_id_fkey(name)
         `)
+        .ilike('subject', `%${professorSubject}%`)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -51,19 +51,16 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         return;
       }
 
-      console.log('All appointments fetched:', data?.length || 0);
+      console.log('Fetched professor appointments:', data);
+      console.log('Total appointments found:', data?.length || 0);
       
-      // Filter appointments that match the professor's subject
-      const matchingAppointments = data?.filter(appointment => {
-        const subjectMatch = appointment.subject.toLowerCase().includes(professorSubject.toLowerCase());
-        console.log(`Appointment "${appointment.subject}" matches "${professorSubject}":`, subjectMatch);
-        return subjectMatch;
-      }) || [];
+      // Log each appointment's subject for debugging
+      data?.forEach(apt => {
+        console.log(`Appointment subject: "${apt.subject}" contains "${professorSubject}":`, 
+          apt.subject.toLowerCase().includes(professorSubject.toLowerCase()));
+      });
 
-      console.log('Matching appointments for professor:', matchingAppointments.length);
-      console.log('Matching appointments:', matchingAppointments);
-
-      setAppointments(matchingAppointments);
+      setAppointments(data || []);
     } catch (err) {
       console.error('Unexpected error fetching appointments:', err);
       toast({
