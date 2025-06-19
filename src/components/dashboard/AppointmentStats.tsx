@@ -1,0 +1,51 @@
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+
+interface DatabaseAppointment {
+  id: string;
+  student_id: string;
+  professor_id: string | null;
+  subject: string;
+  date: string;
+  time: string;
+  status: string;
+  created_at: string;
+}
+
+interface AppointmentStatsProps {
+  appointments: DatabaseAppointment[];
+}
+
+const AppointmentStats: React.FC<AppointmentStatsProps> = ({ appointments }) => {
+  return (
+    <Card className="cvsu-card bg-white/80 backdrop-blur-sm">
+      <CardHeader>
+        <CardTitle className="text-primary">Appointment Summary</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        <div className="flex justify-between">
+          <span>Total Appointments:</span>
+          <Badge variant="secondary" className="bg-primary/10 text-primary">
+            {appointments.length}
+          </Badge>
+        </div>
+        <div className="flex justify-between">
+          <span>Pending:</span>
+          <Badge className="bg-yellow-600">
+            {appointments.filter(a => a.status === 'pending').length}
+          </Badge>
+        </div>
+        <div className="flex justify-between">
+          <span>Approved:</span>
+          <Badge className="bg-green-600">
+            {appointments.filter(a => a.status === 'approved').length}
+          </Badge>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default AppointmentStats;

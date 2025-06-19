@@ -1,14 +1,14 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { professors } from '@/data/subjects';
+import ProfessorSelect from './forms/ProfessorSelect';
+import DateTimeSelect from './forms/DateTimeSelect';
 
 interface BookAppointmentFormProps {
   onSuccess: () => void;
@@ -57,14 +57,13 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
 
       console.log('Creating appointment with professor:', professor);
 
-      // Create appointment in database - use user ID as professor_id since we don't have actual professor UUIDs
-      // We'll store the demo professor info in the subject field and use a placeholder UUID
+      // Create appointment in database - use null for professor_id since we're using demo data
       const { data: appointment, error: appointmentError } = await supabase
         .from('appointments')
         .insert({
           student_id: user!.id,
-          professor_id: null, // Set to null since we're using demo data
-          subject: `${professor.subject} (Prof. ${professor.name})`, // Include professor name in subject
+          professor_id: null,
+          subject: `${professor.subject} (Prof. ${professor.name})`,
           date,
           time,
           status: 'pending'
@@ -108,57 +107,19 @@ const BookAppointmentForm: React.FC<BookAppointmentFormProps> = ({ onSuccess, on
             </Alert>
           )}
           
-          <div className="space-y-2">
-            <Label htmlFor="professor">Select Professor & Subject</Label>
-            <select
-              id="professor"
-              value={selectedProfessor}
-              onChange={(e) => setSelectedProfessor(e.target.value)}
-              className="w-full p-3 border border-primary/20 rounded-md focus:border-primary focus:ring-1 focus:ring-primary"
-              disabled={isSubmitting}
-            >
-              <option value="">Choose a professor...</option>
-              {professors.map((professor) => (
-                <option key={professor.id} value={professor.id}>
-                  {professor.name} - {professor.subject}
-                </option>
-              ))}
-            </select>
-          </div>
+          <ProfessorSelect
+            value={selectedProfessor}
+            onChange={setSelectedProfessor}
+            disabled={isSubmitting}
+          />
           
-          <div className="space-y-2">
-            <Label htmlFor="date">Preferred Date</Label>
-            <Input
-              id="date"
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              disabled={isSubmitting}
-              min={new Date().toISOString().split('T')[0]}
-              className="border-primary/20 focus:border-primary"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="time">Preferred Time</Label>
-            <select
-              id="time"
-              value={time}
-              onChange={(e) => setTime(e.target.value)}
-              className="w-full p-3 border border-primary/20 rounded-md focus:border-primary focus:ring-1 focus:ring-primary"
-              disabled={isSubmitting}
-            >
-              <option value="">Select time...</option>
-              <option value="08:00">8:00 AM</option>
-              <option value="09:00">9:00 AM</option>
-              <option value="10:00">10:00 AM</option>
-              <option value="11:00">11:00 AM</option>
-              <option value="13:00">1:00 PM</option>
-              <option value="14:00">2:00 PM</option>
-              <option value="15:00">3:00 PM</option>
-              <option value="16:00">4:00 PM</option>
-            </select>
-          </div>
+          <DateTimeSelect
+            date={date}
+            time={time}
+            onDateChange={setDate}
+            onTimeChange={setTime}
+            disabled={isSubmitting}
+          />
           
           <div className="flex space-x-2">
             <Button 
