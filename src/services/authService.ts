@@ -17,6 +17,8 @@ export const authService = {
       };
     }
     
+    console.log('Attempting to sign up user:', email);
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -28,7 +30,10 @@ export const authService = {
       }
     });
     
+    console.log('Signup response:', { data, error });
+    
     if (error) {
+      console.error('Signup error:', error);
       if (error.message.includes('User already registered') || 
           error.message.includes('duplicate key') ||
           error.message.includes('already been registered')) {
@@ -38,16 +43,30 @@ export const authService = {
           } 
         };
       }
+      return { error };
     }
     
-    return { error };
+    // If signup was successful, log the user creation
+    if (data.user && !data.user.email_confirmed_at) {
+      console.log('User created successfully, verification email sent to:', email);
+    }
+    
+    return { data, error: null };
   },
 
   async signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({
+    console.log('Attempting to sign in user:', email);
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
+    console.log('Signin response:', { data, error });
+    
+    if (error) {
+      console.error('Signin error:', error);
+    }
     
     return { error };
   },
@@ -55,7 +74,9 @@ export const authService = {
   async signInWithGoogle() {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signInWithOAuth({
+    console.log('Attempting Google sign in with redirect:', redirectUrl);
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
@@ -66,7 +87,10 @@ export const authService = {
       }
     });
     
+    console.log('Google signin response:', { data, error });
+    
     if (error) {
+      console.error('Google signin error:', error);
       if (error.message.includes('provider is not enabled')) {
         return { 
           error: { 
@@ -80,6 +104,7 @@ export const authService = {
   },
 
   async signOut() {
+    console.log('Signing out user');
     await supabase.auth.signOut();
   }
 };

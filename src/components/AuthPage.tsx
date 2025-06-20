@@ -21,11 +21,16 @@ const AuthPage: React.FC = () => {
     setError('');
     setMessage('');
     
+    console.log('Form submitted:', { isLogin, email, hasPassword: !!password, hasName: !!name });
+    
     if (isLogin) {
       const { error } = await signIn(email, password);
       if (error) {
+        console.error('Login error:', error);
         if (error.message.includes('Email not confirmed')) {
           setError('Please check your email and click the confirmation link before signing in.');
+        } else if (error.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please check your credentials and try again.');
         } else {
           setError(error.message);
         }
@@ -36,11 +41,19 @@ const AuthPage: React.FC = () => {
         return;
       }
       
-      const { error } = await signUp(email, password, name);
+      console.log('Attempting signup with:', { email, name });
+      
+      const { data, error } = await signUp(email, password, name);
       if (error) {
+        console.error('Signup error:', error);
         setError(error.message);
       } else {
-        setMessage('Please check your email for a confirmation link before you can sign in!');
+        console.log('Signup successful, showing verification message');
+        setMessage('Account created successfully! Please check your email for a confirmation link before you can sign in.');
+        // Clear form after successful signup
+        setEmail('');
+        setPassword('');
+        setName('');
       }
     }
   };
@@ -48,8 +61,10 @@ const AuthPage: React.FC = () => {
   const handleGoogleSignIn = async () => {
     setError('');
     setMessage('');
+    console.log('Google sign in initiated');
     const { error } = await signInWithGoogle();
     if (error) {
+      console.error('Google signin error:', error);
       setError(error.message);
     }
   };
@@ -58,6 +73,7 @@ const AuthPage: React.FC = () => {
     setIsLogin(!isLogin);
     setError('');
     setMessage('');
+    console.log('Toggled auth mode to:', !isLogin ? 'login' : 'signup');
   };
 
   // Check if it's a professor email to show appropriate messaging
