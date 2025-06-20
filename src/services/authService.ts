@@ -38,6 +38,12 @@ export const authService = {
           } 
         };
       }
+    } else if (data?.user && !data?.user?.email_confirmed_at) {
+      // Return success message for email confirmation
+      return { 
+        error: null,
+        message: 'Please check your email and click the confirmation link to complete your registration.'
+      };
     }
     
     return { error };

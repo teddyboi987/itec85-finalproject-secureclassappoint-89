@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,6 +5,7 @@ import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { useProfessorAppointments } from '@/hooks/useProfessorAppointments';
 import ProfessorStatsCards from './professor/ProfessorStatsCards';
 import AppointmentRequestsContainer from './professor/AppointmentRequestsContainer';
+import ManualAppointmentManager from './professor/ManualAppointmentManager';
 
 const ProfessorDashboard: React.FC = () => {
   const { profile } = useSupabaseAuth();
@@ -66,6 +66,12 @@ const ProfessorDashboard: React.FC = () => {
 
         <ProfessorStatsCards appointments={appointments} />
         
+        {/* Manual Appointment Manager - shows ALL appointments */}
+        <div className="mb-6">
+          <ManualAppointmentManager />
+        </div>
+        
+        {/* Original filtered view - keep for when filtering is fixed */}
         <AppointmentRequestsContainer 
           appointments={appointments}
           professorSubject={professorSubject}

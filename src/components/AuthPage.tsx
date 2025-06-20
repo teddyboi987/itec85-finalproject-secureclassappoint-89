@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
-import { GraduationCap, Info } from 'lucide-react';
+import { GraduationCap, Info, Mail } from 'lucide-react';
 
 const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -33,11 +33,13 @@ const AuthPage: React.FC = () => {
         return;
       }
       
-      const { error } = await signUp(email, password, name);
-      if (error) {
-        setError(error.message);
+      const result = await signUp(email, password, name);
+      if (result.error) {
+        setError(result.error.message);
+      } else if (result.message) {
+        setMessage(result.message);
       } else {
-        setMessage('Check your email for the confirmation link!');
+        setMessage('Registration successful! Please check your email for the confirmation link.');
       }
     }
   };
@@ -106,6 +108,7 @@ const AuthPage: React.FC = () => {
               
               {message && (
                 <Alert>
+                  <Mail className="h-4 w-4" />
                   <AlertDescription>{message}</AlertDescription>
                 </Alert>
               )}
@@ -187,6 +190,16 @@ const AuthPage: React.FC = () => {
                   </p>
                 )}
               </div>
+              
+              {/* Email confirmation reminder for students */}
+              {!isLogin && !isProfessorEmail && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded">
+                  <p className="text-sm text-blue-700 flex items-center">
+                    <Mail className="h-4 w-4 mr-2" />
+                    You'll receive an email confirmation link after registration
+                  </p>
+                </div>
+              )}
               
               {/* Conditionally disable signup for professors */}
               <Button 
