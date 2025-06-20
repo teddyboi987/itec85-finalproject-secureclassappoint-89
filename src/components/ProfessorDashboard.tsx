@@ -22,11 +22,12 @@ const ProfessorDashboard: React.FC = () => {
   const professorSubject = profile?.subject || '';
   const pendingAppointments = appointments.filter(a => a.status === 'pending');
 
-  console.log('🏛️ PROFESSOR DASHBOARD:');
-  console.log('👤 Profile subject:', professorSubject);
+  console.log('🏛️ PROFESSOR DASHBOARD RENDER:');
+  console.log('👤 Profile:', profile);
+  console.log('📚 Professor Subject:', professorSubject);
   console.log('📊 Total appointments:', appointments.length);
   console.log('⏳ Pending appointments:', pendingAppointments.length);
-  console.log('📋 All appointments:', appointments);
+  console.log('🔄 Loading state:', isLoading);
 
   if (isLoading) {
     return (
@@ -68,13 +69,14 @@ const ProfessorDashboard: React.FC = () => {
             Manage your student consultations
           </p>
           
-          {/* Simple Debug Info */}
+          {/* Debug Info */}
           <div className="text-xs text-muted-foreground mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="font-semibold text-blue-800 mb-1">📊 Dashboard Status:</p>
-            <p>✅ Total appointments found: {appointments.length}</p>
-            <p>⏳ Pending appointments: {pendingAppointments.length}</p>
-            <p>📚 Looking for subject: "{professorSubject}"</p>
+            <p className="font-semibold text-blue-800 mb-1">📊 Debug Info:</p>
+            <p>✅ Total appointments: {appointments.length}</p>
+            <p>⏳ Pending: {pendingAppointments.length}</p>
+            <p>📚 Subject: "{professorSubject}"</p>
             <p>🔄 Loading: {isLoading ? 'Yes' : 'No'}</p>
+            <p>👤 Profile ID: {profile?.id}</p>
           </div>
         </div>
 

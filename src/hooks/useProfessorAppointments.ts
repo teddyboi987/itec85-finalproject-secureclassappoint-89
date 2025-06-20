@@ -10,58 +10,51 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
   const { toast } = useToast();
 
   const fetchAppointments = async () => {
-    if (!professorSubject) {
-      console.log('❌ No professor subject provided');
-      setAppointments([]);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       setIsLoading(true);
-      console.log(`🔄 Fetching appointments for subject: "${professorSubject}"`);
+      console.log('🔍 FETCHING APPOINTMENTS - Professor Subject:', professorSubject);
       
-      // Simple query - get ALL appointments and filter client-side
+      if (!professorSubject) {
+        console.log('❌ No professor subject provided');
+        setAppointments([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Direct query with subject filter
       const { data, error } = await supabase
         .from('appointments')
         .select(`
           *,
           student_profile:profiles!appointments_student_id_fkey(name)
         `)
+        .eq('subject', professorSubject)
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('❌ Error fetching appointments:', error);
+        console.error('❌ Database error:', error);
         throw error;
       }
 
-      console.log('📊 Raw appointments from database:', data);
+      console.log('📊 RAW DATABASE RESPONSE:', data);
+      console.log('📊 Number of appointments found:', data?.length || 0);
       
-      if (!data || data.length === 0) {
-        console.log('📭 No appointments found in database');
-        setAppointments([]);
-        setIsLoading(false);
-        return;
+      if (data && data.length > 0) {
+        data.forEach((apt, index) => {
+          console.log(`📋 Appointment ${index + 1}:`, {
+            id: apt.id,
+            subject: apt.subject,
+            status: apt.status,
+            date: apt.date,
+            time: apt.time,
+            student: apt.student_profile?.name
+          });
+        });
       }
 
-      // Simple filtering - just check if appointment subject matches professor subject
-      const filteredAppointments = data.filter(appointment => {
-        const appointmentSubject = appointment.subject?.toLowerCase().trim() || '';
-        const profSubject = professorSubject.toLowerCase().trim();
-        
-        console.log(`🔍 Checking: "${appointmentSubject}" vs "${profSubject}"`);
-        
-        // Simple exact match
-        const matches = appointmentSubject === profSubject;
-        console.log(`✅ Match result: ${matches}`);
-        
-        return matches;
-      });
-
-      console.log(`🎯 Found ${filteredAppointments.length} matching appointments out of ${data.length} total`);
-      setAppointments(filteredAppointments);
+      setAppointments(data || []);
     } catch (err) {
-      console.error('💥 Error fetching appointments:', err);
+      console.error('💥 ERROR in fetchAppointments:', err);
       toast({
         title: "Error",
         description: "Failed to fetch appointments",
@@ -114,15 +107,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
   };
 
   useEffect(() => {
-    console.log(`🚀 Setting up appointments for professor subject: "${professorSubject}"`);
-    
-    if (!professorSubject) {
-      setAppointments([]);
-      setIsLoading(false);
-      return;
-    }
-
-    // Initial fetch
+    console.log('🚀 EFFECT TRIGGERED - Professor Subject:', professorSubject);
     fetchAppointments();
 
     // Set up real-time subscription
