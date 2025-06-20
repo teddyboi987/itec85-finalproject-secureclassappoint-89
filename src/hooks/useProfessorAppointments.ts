@@ -54,13 +54,19 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
       console.log('All appointments fetched:', data);
       
-      // Filter appointments that exactly match the professor's subject
+      // Filter appointments that match the professor's subject
       const filteredAppointments = data?.filter(appointment => {
-        // Extract the subject part before any professor name in parentheses
-        const subjectPart = appointment.subject.split('(')[0].trim();
-        const matches = subjectPart.toLowerCase() === professorSubject.toLowerCase();
+        // Check if the subject string contains the professor's subject
+        // This handles cases like "Mathematics (Prof. Dr. John Smith)" containing "Mathematics"
+        const appointmentSubject = appointment.subject.toLowerCase();
+        const professorSubjectLower = professorSubject.toLowerCase();
         
-        console.log(`Filtering: "${subjectPart}" === "${professorSubject}": ${matches}`);
+        // Check exact match first, then check if appointment subject starts with professor subject
+        const matches = appointmentSubject === professorSubjectLower || 
+                       appointmentSubject.startsWith(professorSubjectLower + ' ') ||
+                       appointmentSubject.includes(professorSubjectLower);
+        
+        console.log(`Filtering: "${appointment.subject}" for professor subject "${professorSubject}": ${matches}`);
         return matches;
       }) || [];
 
@@ -127,6 +133,8 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
   useEffect(() => {
     if (!professorSubject) return;
 
+    console.log('Setting up professor appointments subscription for subject:', professorSubject);
+    
     // Initial fetch
     fetchAppointments();
 
@@ -149,6 +157,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
       .subscribe();
 
     return () => {
+      console.log('Cleaning up professor appointments subscription');
       supabase.removeChannel(channel);
     };
   }, [professorSubject]);

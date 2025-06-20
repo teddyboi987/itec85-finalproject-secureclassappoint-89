@@ -1,11 +1,8 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar, Clock, BookOpen, Trash2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { Calendar, Clock, BookOpen } from 'lucide-react';
 
 interface DatabaseAppointment {
   id: string;
@@ -23,68 +20,7 @@ interface AppointmentsListProps {
   onAppointmentDeleted?: () => void;
 }
 
-const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onAppointmentDeleted }) => {
-  const { toast } = useToast();
-  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
-  const [localAppointments, setLocalAppointments] = useState<DatabaseAppointment[]>(appointments);
-
-  // Update local state when appointments prop changes
-  React.useEffect(() => {
-    setLocalAppointments(appointments);
-  }, [appointments]);
-
-  const handleDeleteAppointment = async (appointmentId: string) => {
-    setDeletingIds(prev => new Set(prev).add(appointmentId));
-    
-    try {
-      console.log('Deleting appointment:', appointmentId);
-      
-      const { error } = await supabase
-        .from('appointments')
-        .delete()
-        .eq('id', appointmentId);
-
-      if (error) {
-        console.error('Error deleting appointment:', error);
-        toast({
-          title: "Error",
-          description: "Failed to delete appointment",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Appointment deleted successfully');
-      
-      // Immediately remove from local state for instant UI update
-      setLocalAppointments(prev => prev.filter(apt => apt.id !== appointmentId));
-      
-      toast({
-        title: "Success",
-        description: "Appointment request deleted successfully",
-      });
-
-      // Call callback to refresh parent data and update stats
-      if (onAppointmentDeleted) {
-        console.log('Calling onAppointmentDeleted callback');
-        onAppointmentDeleted();
-      }
-    } catch (err) {
-      console.error('Unexpected error deleting appointment:', err);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    } finally {
-      setDeletingIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(appointmentId);
-        return newSet;
-      });
-    }
-  };
-
+const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments }) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved': return 'bg-green-600 hover:bg-green-700';
@@ -99,16 +35,16 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
     return match ? match[1] : 'Unknown Professor';
   };
 
-  console.log('AppointmentsList - Current local appointments:', localAppointments);
+  console.log('AppointmentsList - Current appointments:', appointments);
 
   return (
     <Card className="cvsu-card mt-6 bg-white/90 backdrop-blur-sm">
       <CardHeader>
         <CardTitle className="text-primary">My Appointments</CardTitle>
-        <CardDescription>View and manage your appointment requests</CardDescription>
+        <CardDescription>View your appointment requests and their status</CardDescription>
       </CardHeader>
       <CardContent>
-        {localAppointments.length === 0 ? (
+        {appointments.length === 0 ? (
           <div className="text-center py-8">
             <BookOpen className="h-12 w-12 text-primary/40 mx-auto mb-4" />
             <p className="text-muted-foreground py-4">
@@ -117,7 +53,7 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
           </div>
         ) : (
           <div className="space-y-4">
-            {localAppointments.map((appointment) => (
+            {appointments.map((appointment) => (
               <div key={appointment.id} className="border border-primary/20 rounded-lg p-4 bg-white">
                 <div className="flex justify-between items-start">
                   <div className="space-y-2 flex-1">
@@ -140,21 +76,6 @@ const AppointmentsList: React.FC<AppointmentsListProps> = ({ appointments, onApp
                     <Badge className={getStatusColor(appointment.status)}>
                       {appointment.status}
                     </Badge>
-                    {appointment.status === 'pending' && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDeleteAppointment(appointment.id)}
-                        disabled={deletingIds.has(appointment.id)}
-                        className="border-red-300 text-red-600 hover:bg-red-50"
-                      >
-                        {deletingIds.has(appointment.id) ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                      </Button>
-                    )}
                   </div>
                 </div>
               </div>

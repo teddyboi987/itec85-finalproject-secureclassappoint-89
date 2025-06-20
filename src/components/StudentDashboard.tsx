@@ -20,11 +20,6 @@ const StudentDashboard: React.FC = () => {
     refetchAppointments();
   };
 
-  const handleAppointmentDeleted = () => {
-    console.log('Appointment deleted, refreshing data and updating stats');
-    refetchAppointments();
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 flex items-center justify-center">
@@ -57,10 +52,7 @@ const StudentDashboard: React.FC = () => {
           <RecentActivity appointments={appointments} />
         </div>
 
-        <AppointmentsList 
-          appointments={appointments} 
-          onAppointmentDeleted={handleAppointmentDeleted}
-        />
+        <AppointmentsList appointments={appointments} />
 
         {/* Booking Form Modal */}
         {showBookingForm && (
