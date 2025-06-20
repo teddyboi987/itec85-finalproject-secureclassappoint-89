@@ -22,6 +22,7 @@ const ProfessorDashboard: React.FC = () => {
   console.log('📚 Professor Subject:', professorSubject);
   console.log('📊 Total appointments:', appointments.length);
   console.log('🔄 Loading state:', isLoading);
+  console.log('📋 Appointments data:', appointments);
 
   if (isLoading) {
     return (
@@ -62,6 +63,9 @@ const ProfessorDashboard: React.FC = () => {
             Subject: <span className="font-semibold text-primary">{professorSubject}</span> | 
             Manage your student consultations
           </p>
+          <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-700">
+            Debug: Found {appointments.length} appointments for "{professorSubject}"
+          </div>
         </div>
 
         <ProfessorStatsCards appointments={appointments} />

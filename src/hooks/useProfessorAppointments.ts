@@ -17,18 +17,16 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
       if (!professorSubject) {
         console.log('❌ No professor subject provided');
         setAppointments([]);
-        setIsLoading(false);
         return;
       }
 
-      // Direct query with subject filter
+      // Query all appointments first, then filter
       const { data, error } = await supabase
         .from('appointments')
         .select(`
           *,
           student_profile:profiles!appointments_student_id_fkey(name)
         `)
-        .eq('subject', professorSubject)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -36,23 +34,26 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         throw error;
       }
 
-      console.log('📊 RAW DATABASE RESPONSE:', data);
-      console.log('📊 Number of appointments found:', data?.length || 0);
+      console.log('📊 ALL APPOINTMENTS FROM DB:', data);
+      console.log('📊 Number of total appointments:', data?.length || 0);
       
-      if (data && data.length > 0) {
-        data.forEach((apt, index) => {
-          console.log(`📋 Appointment ${index + 1}:`, {
-            id: apt.id,
-            subject: apt.subject,
-            status: apt.status,
-            date: apt.date,
-            time: apt.time,
-            student: apt.student_profile?.name
-          });
-        });
+      if (!data) {
+        setAppointments([]);
+        return;
       }
 
-      setAppointments(data || []);
+      // Filter appointments by subject (case insensitive)
+      const filteredAppointments = data.filter(appointment => {
+        const appointmentSubject = appointment.subject?.toLowerCase().trim();
+        const profSubject = professorSubject.toLowerCase().trim();
+        console.log('🔍 Comparing:', appointmentSubject, 'vs', profSubject);
+        return appointmentSubject === profSubject;
+      });
+
+      console.log('✅ FILTERED APPOINTMENTS:', filteredAppointments);
+      console.log('✅ Number of filtered appointments:', filteredAppointments.length);
+      
+      setAppointments(filteredAppointments);
     } catch (err) {
       console.error('💥 ERROR in fetchAppointments:', err);
       toast({
@@ -108,7 +109,9 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
   useEffect(() => {
     console.log('🚀 EFFECT TRIGGERED - Professor Subject:', professorSubject);
-    fetchAppointments();
+    if (professorSubject) {
+      fetchAppointments();
+    }
 
     // Set up real-time subscription
     const channel = supabase
@@ -122,7 +125,9 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         },
         (payload) => {
           console.log('🔄 Real-time change detected:', payload);
-          fetchAppointments();
+          if (professorSubject) {
+            fetchAppointments();
+          }
         }
       )
       .subscribe();
