@@ -13,7 +13,7 @@ export interface SupabaseAuthContextType {
   user: User | null;
   profile: Profile | null;
   session: Session | null;
-  signUp: (email: string, password: string, name: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, name: string) => Promise<{ data?: any; error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signInWithGoogle: () => Promise<{ error: any }>;
   signOut: () => Promise<void>;

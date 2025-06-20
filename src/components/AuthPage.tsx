@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
@@ -43,7 +42,7 @@ const AuthPage: React.FC = () => {
       
       console.log('Attempting signup with:', { email, name });
       
-      const { data, error } = await signUp(email, password, name);
+      const { error } = await signUp(email, password, name);
       if (error) {
         console.error('Signup error:', error);
         setError(error.message);
