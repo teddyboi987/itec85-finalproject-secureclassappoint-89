@@ -23,6 +23,10 @@ const ProfessorDashboard: React.FC = () => {
   const professorSubject = profile?.subject || '';
   const pendingAppointments = appointments.filter(a => a.status === 'pending');
 
+  console.log('ProfessorDashboard - Profile subject:', professorSubject);
+  console.log('ProfessorDashboard - All appointments:', appointments);
+  console.log('ProfessorDashboard - Pending appointments:', pendingAppointments);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50 flex items-center justify-center">
@@ -61,6 +65,9 @@ const ProfessorDashboard: React.FC = () => {
           <p className="text-muted-foreground">
             Subject: <span className="font-semibold text-primary">{professorSubject}</span> | 
             Manage your student consultations
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Debug: Found {appointments.length} total appointments, {pendingAppointments.length} pending
           </p>
         </div>
 

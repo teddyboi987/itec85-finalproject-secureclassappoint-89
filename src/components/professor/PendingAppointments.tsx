@@ -39,6 +39,7 @@ const PendingAppointments: React.FC<PendingAppointmentsProps> = ({
   };
 
   console.log('PendingAppointments - Rendering with appointments:', pendingAppointments);
+  console.log('PendingAppointments - Professor subject:', professorSubject);
 
   if (pendingAppointments.length === 0) {
     return (
@@ -55,6 +56,9 @@ const PendingAppointments: React.FC<PendingAppointmentsProps> = ({
             <AlertCircle className="h-12 w-12 text-primary/40 mx-auto mb-4" />
             <p className="text-muted-foreground">
               No pending consultation requests at the moment.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              Debug: Looking for appointments containing "{professorSubject}"
             </p>
           </div>
         </CardContent>
