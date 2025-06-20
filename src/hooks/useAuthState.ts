@@ -16,7 +16,7 @@ export const useAuthState = () => {
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
         
         if (!mounted) return;
@@ -24,7 +24,8 @@ export const useAuthState = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user) {
+        if (event === 'SIGNED_IN' && session?.user) {
+          console.log('User signed in, fetching profile');
           // Fetch profile with delay to ensure trigger completion
           setTimeout(async () => {
             if (!mounted) return;
@@ -34,8 +35,20 @@ export const useAuthState = () => {
               setIsLoading(false);
             }
           }, 500);
-        } else {
+        } else if (event === 'SIGNED_OUT') {
+          console.log('User signed out');
           setProfile(null);
+          setIsLoading(false);
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed');
+          if (session?.user && !profile) {
+            const profileData = await profileService.fetchProfile(session.user.id);
+            if (mounted) {
+              setProfile(profileData);
+            }
+          }
+          setIsLoading(false);
+        } else {
           setIsLoading(false);
         }
       }

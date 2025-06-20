@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { GraduationCap } from 'lucide-react';
@@ -14,6 +15,19 @@ const AuthPage: React.FC = () => {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const { signIn, signUp, signInWithGoogle, isLoading } = useSupabaseAuth();
+
+  // Check for email confirmation on component mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type');
+    const token_hash = urlParams.get('token_hash');
+    
+    if (type === 'signup' && token_hash) {
+      setMessage('Email confirmed successfully! You can now sign in with your credentials.');
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,13 +56,13 @@ const AuthPage: React.FC = () => {
       
       console.log('Attempting signup with:', { email, name });
       
-      const { error } = await signUp(email, password, name);
+      const { data, error } = await signUp(email, password, name);
       if (error) {
         console.error('Signup error:', error);
         setError(error.message);
       } else {
         console.log('Signup successful, showing verification message');
-        setMessage('Account created successfully! Please check your email for a confirmation link before you can sign in.');
+        setMessage('Account created successfully! Please check your email for a confirmation link. You must click the link to verify your account before you can sign in.');
         // Clear form after successful signup
         setEmail('');
         setPassword('');
