@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
-import { GraduationCap, Info } from 'lucide-react';
+import { GraduationCap, Info, Mail } from 'lucide-react';
 
 const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -25,7 +25,11 @@ const AuthPage: React.FC = () => {
     if (isLogin) {
       const { error } = await signIn(email, password);
       if (error) {
-        setError(error.message);
+        if (error.message.includes('Email not confirmed')) {
+          setError('Please check your email and click the confirmation link before signing in.');
+        } else {
+          setError(error.message);
+        }
       }
     } else {
       if (!name.trim()) {
@@ -37,16 +41,19 @@ const AuthPage: React.FC = () => {
       if (error) {
         setError(error.message);
       } else {
-        setMessage('Check your email for the confirmation link!');
+        setMessage('Please check your email for a confirmation link before you can sign in!');
       }
     }
   };
 
   const handleGoogleSignIn = async () => {
     setError('');
+    setMessage('');
     const { error } = await signInWithGoogle();
     if (error) {
       setError(error.message);
+    } else {
+      setMessage('If this is your first time signing in with Google, please check your email for verification.');
     }
   };
 
@@ -106,6 +113,7 @@ const AuthPage: React.FC = () => {
               
               {message && (
                 <Alert>
+                  <Mail className="h-4 w-4" />
                   <AlertDescription>{message}</AlertDescription>
                 </Alert>
               )}
@@ -179,7 +187,8 @@ const AuthPage: React.FC = () => {
                   disabled={isLoading}
                   className="border-primary/20 focus:border-primary"
                   placeholder={isProfessorEmail && !isLogin ? "Use: prof123" : "Enter your password"}
-                  autoComplete={isLogin ? "current-password" : "new-password"}
+                  autoComplete="off"
+                  data-form-type="other"
                 />
                 {isProfessorEmail && !isLogin && (
                   <p className="text-xs text-red-600">
@@ -187,6 +196,19 @@ const AuthPage: React.FC = () => {
                   </p>
                 )}
               </div>
+              
+              {/* Email verification notice for new users */}
+              {!isLogin && !isProfessorEmail && (
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
+                  <div className="flex items-start space-x-2">
+                    <Mail className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <p className="text-blue-700">
+                      <strong>Email Verification Required:</strong> After creating your account, 
+                      you'll need to check your email and click the confirmation link before you can sign in.
+                    </p>
+                  </div>
+                </div>
+              )}
               
               {/* Conditionally disable signup for professors */}
               <Button 
