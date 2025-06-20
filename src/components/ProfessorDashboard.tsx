@@ -22,7 +22,6 @@ const ProfessorDashboard: React.FC = () => {
   console.log('📚 Professor Subject:', professorSubject);
   console.log('📊 Total appointments:', appointments.length);
   console.log('🔄 Loading state:', isLoading);
-  console.log('📋 Appointments data:', appointments);
 
   if (isLoading) {
     return (

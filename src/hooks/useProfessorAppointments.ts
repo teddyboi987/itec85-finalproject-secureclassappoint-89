@@ -20,7 +20,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         return;
       }
 
-      // Query all appointments first to see what's actually in the database
+      // Query all appointments to debug
       const { data, error } = await supabase
         .from('appointments')
         .select(`
@@ -37,49 +37,38 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
       console.log('📊 ALL APPOINTMENTS FROM DB:', data);
       console.log('📊 Number of total appointments:', data?.length || 0);
       
-      if (!data) {
+      if (!data || data.length === 0) {
+        console.log('❌ No appointments found in database');
         setAppointments([]);
         return;
       }
 
-      // Log all subjects in the database for debugging
-      const allSubjects = data.map(apt => apt.subject);
-      console.log('📚 ALL SUBJECTS IN DB:', allSubjects);
-      console.log('🎯 LOOKING FOR SUBJECT:', professorSubject);
+      // Log each appointment's subject for debugging
+      data.forEach((apt, index) => {
+        console.log(`📋 Appointment ${index + 1}:`, {
+          id: apt.id,
+          subject: apt.subject,
+          student: apt.student_profile?.name,
+          status: apt.status
+        });
+      });
 
-      // Try multiple matching strategies
+      console.log('🎯 Looking for professor subject:', `"${professorSubject}"`);
+
+      // Simple filtering - check if appointment subject contains professor subject
       const filteredAppointments = data.filter(appointment => {
-        const appointmentSubject = appointment.subject;
-        const profSubject = professorSubject;
+        const appointmentSubject = appointment.subject || '';
+        console.log(`🔍 Checking: "${appointmentSubject}" contains "${professorSubject}"`);
         
-        console.log('🔍 EXACT COMPARISON:');
-        console.log('  Appointment subject:', `"${appointmentSubject}"`);
-        console.log('  Professor subject:', `"${profSubject}"`);
-        console.log('  Exact match:', appointmentSubject === profSubject);
+        // Check if the appointment subject contains the professor's subject
+        const matches = appointmentSubject.toLowerCase().includes(professorSubject.toLowerCase());
+        console.log(`✅ Match result: ${matches}`);
         
-        // Try exact match first
-        if (appointmentSubject === profSubject) {
-          return true;
-        }
-        
-        // Try case-insensitive match
-        const lowerAppointment = appointmentSubject?.toLowerCase().trim();
-        const lowerProf = profSubject?.toLowerCase().trim();
-        console.log('  Case-insensitive match:', lowerAppointment === lowerProf);
-        
-        if (lowerAppointment === lowerProf) {
-          return true;
-        }
-        
-        // Try partial match (contains)
-        const partialMatch = lowerAppointment?.includes(lowerProf) || lowerProf?.includes(lowerAppointment);
-        console.log('  Partial match:', partialMatch);
-        
-        return partialMatch;
+        return matches;
       });
 
       console.log('✅ FILTERED APPOINTMENTS:', filteredAppointments);
-      console.log('✅ Number of filtered appointments:', filteredAppointments.length);
+      console.log('✅ Number of matching appointments:', filteredAppointments.length);
       
       setAppointments(filteredAppointments);
     } catch (err) {
@@ -137,9 +126,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
   useEffect(() => {
     console.log('🚀 EFFECT TRIGGERED - Professor Subject:', professorSubject);
-    if (professorSubject) {
-      fetchAppointments();
-    }
+    fetchAppointments();
 
     // Set up real-time subscription
     const channel = supabase
@@ -153,9 +140,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         },
         (payload) => {
           console.log('🔄 Real-time change detected:', payload);
-          if (professorSubject) {
-            fetchAppointments();
-          }
+          fetchAppointments();
         }
       )
       .subscribe();
