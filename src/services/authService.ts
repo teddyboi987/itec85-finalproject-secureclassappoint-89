@@ -2,7 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export const authService = {
-  async signUp(email: string, password: string, name: string) {
+  async signUp(email: string, password: string, name: string): Promise<{ error: any; message?: string }> {
     const redirectUrl = `${window.location.origin}/`;
     
     // Check if it's a professor email
