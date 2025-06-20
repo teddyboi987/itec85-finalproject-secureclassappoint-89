@@ -24,6 +24,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
   const fetchAppointments = async () => {
     if (!professorSubject) {
+      console.log('No professor subject provided, skipping fetch');
       setAppointments([]);
       setIsLoading(false);
       return;
@@ -52,25 +53,54 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         return;
       }
 
-      console.log('All appointments fetched:', data);
+      console.log('Raw appointments from database:', data);
       
-      // More flexible filtering logic
-      const filteredAppointments = data?.filter(appointment => {
-        const appointmentSubject = appointment.subject.toLowerCase();
+      if (!data || data.length === 0) {
+        console.log('No appointments found in database');
+        setAppointments([]);
+        return;
+      }
+
+      // Log each appointment's subject for debugging
+      data.forEach((appointment, index) => {
+        console.log(`Appointment ${index + 1}:`, {
+          id: appointment.id,
+          subject: appointment.subject,
+          status: appointment.status,
+          student_name: appointment.student_profile?.name
+        });
+      });
+
+      // Enhanced filtering logic
+      const filteredAppointments = data.filter(appointment => {
+        const appointmentSubject = appointment.subject?.toLowerCase() || '';
         const professorSubjectLower = professorSubject.toLowerCase();
         
-        console.log(`Checking appointment: "${appointment.subject}"`);
-        console.log(`Against professor subject: "${professorSubject}"`);
+        console.log(`\n--- Filtering appointment ---`);
+        console.log(`Appointment subject: "${appointment.subject}"`);
+        console.log(`Professor subject: "${professorSubject}"`);
+        console.log(`Appointment subject (lowercase): "${appointmentSubject}"`);
+        console.log(`Professor subject (lowercase): "${professorSubjectLower}"`);
         
-        // Check if the appointment subject contains the professor's subject
-        // This handles cases like "Computer Science (Prof. Prof. Santos)" matching "Computer Science"
-        const matches = appointmentSubject.includes(professorSubjectLower);
+        // Check multiple matching strategies
+        const exactMatch = appointmentSubject === professorSubjectLower;
+        const contains = appointmentSubject.includes(professorSubjectLower);
+        const startsWith = appointmentSubject.startsWith(professorSubjectLower);
         
-        console.log(`Match result: ${matches}`);
+        console.log(`Exact match: ${exactMatch}`);
+        console.log(`Contains: ${contains}`);
+        console.log(`Starts with: ${startsWith}`);
+        
+        const matches = exactMatch || contains || startsWith;
+        console.log(`Final match result: ${matches}`);
+        console.log(`--- End filtering ---\n`);
+        
         return matches;
-      }) || [];
+      });
 
       console.log('Filtered appointments for professor:', filteredAppointments);
+      console.log(`Total appointments: ${data.length}, Filtered: ${filteredAppointments.length}`);
+      
       setAppointments(filteredAppointments);
     } catch (err) {
       console.error('Unexpected error fetching appointments:', err);
@@ -131,7 +161,10 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
   // Set up real-time subscription and initial fetch
   useEffect(() => {
-    if (!professorSubject) return;
+    if (!professorSubject) {
+      console.log('No professor subject, skipping subscription setup');
+      return;
+    }
 
     console.log('Setting up professor appointments subscription for subject:', professorSubject);
     
@@ -149,7 +182,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
           table: 'appointments'
         },
         (payload) => {
-          console.log('Real-time appointment change for professor:', payload);
+          console.log('Real-time appointment change detected:', payload);
           // Refetch appointments to ensure filtering is applied correctly
           fetchAppointments();
         }

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,9 +22,13 @@ const ProfessorDashboard: React.FC = () => {
   const professorSubject = profile?.subject || '';
   const pendingAppointments = appointments.filter(a => a.status === 'pending');
 
-  console.log('ProfessorDashboard - Profile subject:', professorSubject);
-  console.log('ProfessorDashboard - All appointments:', appointments);
-  console.log('ProfessorDashboard - Pending appointments:', pendingAppointments);
+  console.log('=== PROFESSOR DASHBOARD DEBUG ===');
+  console.log('Profile:', profile);
+  console.log('Professor subject:', professorSubject);
+  console.log('All appointments:', appointments);
+  console.log('Pending appointments:', pendingAppointments);
+  console.log('Is loading:', isLoading);
+  console.log('=== END PROFESSOR DASHBOARD DEBUG ===');
 
   if (isLoading) {
     return (
@@ -66,9 +69,11 @@ const ProfessorDashboard: React.FC = () => {
             Subject: <span className="font-semibold text-primary">{professorSubject}</span> | 
             Manage your student consultations
           </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Debug: Found {appointments.length} total appointments, {pendingAppointments.length} pending
-          </p>
+          <div className="text-xs text-muted-foreground mt-1 space-y-1">
+            <p>Debug: Found {appointments.length} total appointments, {pendingAppointments.length} pending</p>
+            <p>Profile loaded: {profile ? 'Yes' : 'No'}</p>
+            <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
+          </div>
         </div>
 
         <ProfessorStatsCards appointments={appointments} />
