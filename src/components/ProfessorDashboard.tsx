@@ -1,32 +1,26 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
 import { useProfessorAppointments } from '@/hooks/useProfessorAppointments';
 import ProfessorStatsCards from './professor/ProfessorStatsCards';
-import PendingAppointments from './professor/PendingAppointments';
-import AllAppointments from './professor/AllAppointments';
+import AppointmentRequestsContainer from './professor/AppointmentRequestsContainer';
 
 const ProfessorDashboard: React.FC = () => {
   const { profile } = useSupabaseAuth();
-  const { appointments, isLoading, updateAppointmentStatus, refetchAppointments } = useProfessorAppointments(profile?.subject);
+  const { appointments, isLoading, updateAppointmentStatus } = useProfessorAppointments(profile?.subject);
 
   const handleAppointmentAction = async (appointmentId: string, action: 'approved' | 'rejected') => {
-    const success = await updateAppointmentStatus(appointmentId, action);
-    if (success) {
-      refetchAppointments();
-    }
+    return await updateAppointmentStatus(appointmentId, action);
   };
 
   const professorSubject = profile?.subject || '';
-  const pendingAppointments = appointments.filter(a => a.status === 'pending');
 
   console.log('🏛️ PROFESSOR DASHBOARD RENDER:');
   console.log('👤 Profile:', profile);
   console.log('📚 Professor Subject:', professorSubject);
   console.log('📊 Total appointments:', appointments.length);
-  console.log('⏳ Pending appointments:', pendingAppointments.length);
   console.log('🔄 Loading state:', isLoading);
 
   if (isLoading) {
@@ -68,27 +62,11 @@ const ProfessorDashboard: React.FC = () => {
             Subject: <span className="font-semibold text-primary">{professorSubject}</span> | 
             Manage your student consultations
           </p>
-          
-          {/* Debug Info */}
-          <div className="text-xs text-muted-foreground mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="font-semibold text-blue-800 mb-1">📊 Debug Info:</p>
-            <p>✅ Total appointments: {appointments.length}</p>
-            <p>⏳ Pending: {pendingAppointments.length}</p>
-            <p>📚 Subject: "{professorSubject}"</p>
-            <p>🔄 Loading: {isLoading ? 'Yes' : 'No'}</p>
-            <p>👤 Profile ID: {profile?.id}</p>
-          </div>
         </div>
 
         <ProfessorStatsCards appointments={appointments} />
         
-        <PendingAppointments 
-          pendingAppointments={pendingAppointments}
-          professorSubject={professorSubject}
-          onAppointmentAction={handleAppointmentAction}
-        />
-
-        <AllAppointments 
+        <AppointmentRequestsContainer 
           appointments={appointments}
           professorSubject={professorSubject}
           onAppointmentAction={handleAppointmentAction}
