@@ -9,6 +9,13 @@ const AuthContext = createContext<SupabaseAuthContextType | undefined>(undefined
 export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, profile, session, isLoading } = useAuthState();
 
+  const signOut = async () => {
+    const { error } = await authService.signOut();
+    if (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+
   const contextValue: SupabaseAuthContextType = {
     user,
     profile,
@@ -16,7 +23,7 @@ export const SupabaseAuthProvider: React.FC<{ children: React.ReactNode }> = ({ 
     signUp: authService.signUp,
     signIn: authService.signIn,
     signInWithGoogle: authService.signInWithGoogle,
-    signOut: authService.signOut,
+    signOut,
     isLoading
   };
 

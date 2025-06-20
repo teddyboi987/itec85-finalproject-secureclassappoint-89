@@ -12,61 +12,54 @@ export const useAuthState = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log('useAuthState: Setting up auth state management');
     let mounted = true;
-    let profileFetchTimeout: NodeJS.Timeout;
 
     const fetchProfile = async (userId: string) => {
       try {
-        console.log('Fetching profile for user:', userId);
+        console.log('useAuthState: Fetching profile for user:', userId);
         const profileData = await profileService.fetchProfile(userId);
-        if (mounted) {
-          console.log('Profile fetched:', profileData);
+        if (mounted && profileData) {
+          console.log('useAuthState: Profile fetched successfully:', profileData);
           setProfile(profileData);
+        } else if (mounted) {
+          console.log('useAuthState: No profile found, clearing profile state');
+          setProfile(null);
         }
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('useAuthState: Error fetching profile:', error);
+        if (mounted) {
+          setProfile(null);
+        }
       }
     };
 
-    // Set up auth state listener first
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
+      async (event, session) => {
+        console.log('useAuthState: Auth state changed:', event, session?.user?.email);
         
-        if (!mounted) return;
-        
-        // Clear any pending profile fetch
-        if (profileFetchTimeout) {
-          clearTimeout(profileFetchTimeout);
+        if (!mounted) {
+          console.log('useAuthState: Component unmounted, ignoring auth state change');
+          return;
         }
         
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (event === 'SIGNED_IN' && session?.user) {
-          console.log('User signed in, fetching profile');
+        if (session?.user) {
+          console.log('useAuthState: User authenticated, fetching profile');
           // Use setTimeout to prevent blocking the auth state change
-          profileFetchTimeout = setTimeout(() => {
+          setTimeout(() => {
             if (mounted) {
               fetchProfile(session.user.id);
             }
-          }, 100);
-        } else if (event === 'SIGNED_OUT') {
-          console.log('User signed out, clearing profile');
+          }, 0);
+        } else {
+          console.log('useAuthState: User signed out, clearing profile');
           setProfile(null);
-        } else if (event === 'TOKEN_REFRESHED' && session?.user) {
-          console.log('Token refreshed');
-          // Only fetch profile if we don't have one
-          if (!profile) {
-            profileFetchTimeout = setTimeout(() => {
-              if (mounted) {
-                fetchProfile(session.user.id);
-              }
-            }, 0);
-          }
         }
         
-        // Set loading to false after handling auth state
         setIsLoading(false);
       }
     );
@@ -74,10 +67,11 @@ export const useAuthState = () => {
     // Get initial session
     const getInitialSession = async () => {
       try {
+        console.log('useAuthState: Getting initial session');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Error getting initial session:', error);
+          console.error('useAuthState: Error getting initial session:', error);
           if (mounted) {
             setIsLoading(false);
           }
@@ -86,14 +80,14 @@ export const useAuthState = () => {
 
         if (!mounted) return;
         
-        console.log('Initial session:', session?.user?.email);
+        console.log('useAuthState: Initial session:', session?.user?.email || 'No session');
         
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          console.log('Initial session has user, fetching profile');
-          profileFetchTimeout = setTimeout(() => {
+          console.log('useAuthState: Initial session has user, fetching profile');
+          setTimeout(() => {
             if (mounted) {
               fetchProfile(session.user.id);
             }
@@ -102,24 +96,29 @@ export const useAuthState = () => {
           setIsLoading(false);
         }
       } catch (error) {
-        console.error('Error in getInitialSession:', error);
+        console.error('useAuthState: Error in getInitialSession:', error);
         if (mounted) {
           setIsLoading(false);
         }
       }
     };
 
-    // Get initial session after setting up listener
+    // Get initial session
     getInitialSession();
 
     return () => {
+      console.log('useAuthState: Cleaning up auth state management');
       mounted = false;
-      if (profileFetchTimeout) {
-        clearTimeout(profileFetchTimeout);
-      }
       subscription.unsubscribe();
     };
   }, []);
+
+  console.log('useAuthState: Current state:', { 
+    hasUser: !!user, 
+    hasProfile: !!profile, 
+    hasSession: !!session, 
+    isLoading 
+  });
 
   return {
     user,
