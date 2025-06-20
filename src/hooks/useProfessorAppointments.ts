@@ -13,7 +13,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
   const fetchAndFilterAppointments = async () => {
     if (!professorSubject) {
-      console.log('No professor subject provided, skipping fetch');
+      console.log('⚠️ No professor subject provided, skipping fetch');
       setAppointments([]);
       setIsLoading(false);
       return;
@@ -21,11 +21,17 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
     try {
       setIsLoading(true);
+      console.log(`🔄 Starting to fetch appointments for professor subject: "${professorSubject}"`);
+      
       const allAppointments = await fetchAppointments();
+      console.log(`📊 Total appointments fetched from database: ${allAppointments.length}`);
+      
       const filteredAppointments = filterAppointmentsBySubject(allAppointments, professorSubject);
+      console.log(`✅ Filtered appointments for professor: ${filteredAppointments.length}`);
+      
       setAppointments(filteredAppointments);
     } catch (err) {
-      console.error('💥 Unexpected error fetching appointments:', err);
+      console.error('💥 Error in fetchAndFilterAppointments:', err);
       toast({
         title: "Error",
         description: "Failed to fetch appointments",
@@ -56,7 +62,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
       });
       return true;
     } catch (err) {
-      console.error('💥 Unexpected error updating appointment:', err);
+      console.error('💥 Error updating appointment status:', err);
       toast({
         title: "Error",
         description: `Failed to ${status} appointment`,
@@ -70,10 +76,12 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
   useEffect(() => {
     if (!professorSubject) {
       console.log('⚠️ No professor subject, skipping subscription setup');
+      setAppointments([]);
+      setIsLoading(false);
       return;
     }
 
-    console.log('🔄 Setting up professor appointments subscription for subject:', professorSubject);
+    console.log(`🔄 Setting up professor appointments hook for subject: "${professorSubject}"`);
     
     // Initial fetch
     fetchAndFilterAppointments();
