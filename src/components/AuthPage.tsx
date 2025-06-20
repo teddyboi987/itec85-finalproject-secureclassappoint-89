@@ -52,8 +52,6 @@ const AuthPage: React.FC = () => {
     const { error } = await signInWithGoogle();
     if (error) {
       setError(error.message);
-    } else {
-      setMessage('Please check your email for verification. All users must verify their email before accessing the system.');
     }
   };
 
@@ -187,25 +185,13 @@ const AuthPage: React.FC = () => {
                   disabled={isLoading}
                   className="border-primary/20 focus:border-primary"
                   placeholder={isProfessorEmail && !isLogin ? "Use: prof123" : "Enter your password"}
-                  autoComplete="off"
-                  data-form-type="other"
+                  autoComplete="new-password"
                 />
                 {isProfessorEmail && !isLogin && (
                   <p className="text-xs text-red-600">
                     Professor accounts cannot be created here. Please use "Sign In" instead.
                   </p>
                 )}
-              </div>
-              
-              {/* Email verification notice for all Google users */}
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm">
-                <div className="flex items-start space-x-2">
-                  <Mail className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                  <p className="text-amber-700">
-                    <strong>Security Notice:</strong> All users must verify their email address for security purposes. 
-                    Please check your email after signing in.
-                  </p>
-                </div>
               </div>
               
               {/* Email verification notice for new users */}

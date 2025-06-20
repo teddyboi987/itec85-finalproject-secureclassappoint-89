@@ -61,9 +61,7 @@ export const authService = {
         redirectTo: redirectUrl,
         queryParams: {
           access_type: 'offline',
-          prompt: 'consent',
-          // Force email verification for all users
-          approval_prompt: 'force'
+          prompt: 'consent'
         }
       }
     });
