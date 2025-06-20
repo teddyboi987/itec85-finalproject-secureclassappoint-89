@@ -16,10 +16,12 @@ const StudentDashboard: React.FC = () => {
 
   const handleBookingSuccess = () => {
     setShowBookingForm(false);
+    console.log('Booking successful, refreshing appointments');
     refetchAppointments();
   };
 
   const handleAppointmentDeleted = () => {
+    console.log('Appointment deleted, refreshing data and updating stats');
     refetchAppointments();
   };
 
@@ -33,6 +35,8 @@ const StudentDashboard: React.FC = () => {
       </div>
     );
   }
+
+  console.log('StudentDashboard - Current appointments for stats:', appointments);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-yellow-50">

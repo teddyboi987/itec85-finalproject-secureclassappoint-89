@@ -27,12 +27,13 @@ const AppointmentStats: React.FC<AppointmentStatsProps> = ({ appointments }) => 
   const approvedCount = validAppointments.filter(a => a.status === 'approved').length;
   const rejectedCount = validAppointments.filter(a => a.status === 'rejected').length;
 
-  console.log('AppointmentStats - Real-time update:', { 
+  console.log('AppointmentStats - Stats calculated:', { 
     total: totalAppointments, 
     pending: pendingCount, 
     approved: approvedCount, 
     rejected: rejectedCount,
-    appointmentsLength: validAppointments.length
+    appointmentsCount: validAppointments.length,
+    timestamp: new Date().toISOString()
   });
 
   return (
