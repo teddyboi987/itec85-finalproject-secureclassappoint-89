@@ -1,12 +1,11 @@
 
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useSupabaseAuth } from '@/contexts/SupabaseAuthContext';
-import { GraduationCap, Info, Mail } from 'lucide-react';
+import { GraduationCap } from 'lucide-react';
+import AboutSection from './auth/AboutSection';
+import GoogleSignInButton from './auth/GoogleSignInButton';
+import AuthForm from './auth/AuthForm';
 
 const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -55,39 +54,19 @@ const AuthPage: React.FC = () => {
     }
   };
 
+  const handleToggleMode = () => {
+    setIsLogin(!isLogin);
+    setError('');
+    setMessage('');
+  };
+
   // Check if it's a professor email to show appropriate messaging
   const isProfessorEmail = email.includes('@cvsu.edu.ph') && email !== 'admin@cvsu.edu.ph';
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="max-w-md w-full space-y-6">
-        {/* About Section */}
-        <Card className="cvsu-card bg-white/90 backdrop-blur-sm">
-          <CardContent className="p-4">
-            <div className="flex items-start space-x-3">
-              <div className="cvsu-gradient p-2 rounded-full">
-                <Info className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-primary mb-1">About SecureClass Appoint</h3>
-                <p className="text-sm text-muted-foreground">
-                  An online appointment platform for students to book academic consultations with professors.
-                </p>
-                {isProfessorEmail && (
-                  <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
-                    <p className="text-sm text-blue-700 font-medium">
-                      Professor Account Detected
-                    </p>
-                    <p className="text-xs text-blue-600 mt-1">
-                      Use "Sign In" with your admin-provided credentials. 
-                      {isLogin ? '' : ' No signup needed!'}
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <AboutSection isProfessorEmail={isProfessorEmail} isLogin={isLogin} />
 
         <Card className="cvsu-card bg-white/90 backdrop-blur-sm">
           <CardHeader className="text-center">
@@ -102,136 +81,28 @@ const AuthPage: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+            <div className="space-y-4">
+              <GoogleSignInButton 
+                onGoogleSignIn={handleGoogleSignIn}
+                isLoading={isLoading}
+              />
               
-              {message && (
-                <Alert>
-                  <Mail className="h-4 w-4" />
-                  <AlertDescription>{message}</AlertDescription>
-                </Alert>
-              )}
-
-              {/* Google Sign In Button */}
-              <Button 
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleGoogleSignIn}
-                disabled={isLoading}
-              >
-                <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
-                  <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                  <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                Continue with Google
-              </Button>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
-                </div>
-              </div>
-              
-              {!isLogin && !isProfessorEmail && (
-                <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
-                  <Input
-                    id="name"
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required={!isLogin && !isProfessorEmail}
-                    disabled={isLoading}
-                    className="border-primary/20 focus:border-primary"
-                    placeholder="Enter your full name"
-                    autoComplete="name"
-                  />
-                </div>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="border-primary/20 focus:border-primary"
-                  placeholder="Enter your email address"
-                  autoComplete="email"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  className="border-primary/20 focus:border-primary"
-                  placeholder={isProfessorEmail && !isLogin ? "Use: prof123" : "Enter your password"}
-                  autoComplete="new-password"
-                />
-                {isProfessorEmail && !isLogin && (
-                  <p className="text-xs text-red-600">
-                    Professor accounts cannot be created here. Please use "Sign In" instead.
-                  </p>
-                )}
-              </div>
-              
-              {/* Email verification notice for new users */}
-              {!isLogin && !isProfessorEmail && (
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded text-sm">
-                  <div className="flex items-start space-x-2">
-                    <Mail className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-                    <p className="text-blue-700">
-                      <strong>Email Verification Required:</strong> After creating your account, 
-                      you'll need to check your email and click the confirmation link before you can sign in.
-                    </p>
-                  </div>
-                </div>
-              )}
-              
-              {/* Conditionally disable signup for professors */}
-              <Button 
-                type="submit" 
-                className="w-full cvsu-gradient"
-                disabled={isLoading || (!isLogin && isProfessorEmail)}
-              >
-                {isLoading ? (isLogin ? 'Signing in...' : 'Creating account...') : (isLogin ? 'Sign In' : isProfessorEmail ? 'Use Sign In Instead' : 'Create Account')}
-              </Button>
-              
-              <div className="text-center">
-                <Button
-                  type="button"
-                  variant="link"
-                  onClick={() => {
-                    setIsLogin(!isLogin);
-                    setError('');
-                    setMessage('');
-                  }}
-                  disabled={isLoading}
-                  className="text-primary hover:text-primary/80"
-                >
-                  {isLogin ? "New student? Create an account" : "Already have an account? Sign in"}
-                </Button>
-              </div>
-            </form>
+              <AuthForm
+                isLogin={isLogin}
+                email={email}
+                password={password}
+                name={name}
+                error={error}
+                message={message}
+                isLoading={isLoading}
+                isProfessorEmail={isProfessorEmail}
+                onEmailChange={setEmail}
+                onPasswordChange={setPassword}
+                onNameChange={setName}
+                onSubmit={handleSubmit}
+                onToggleMode={handleToggleMode}
+              />
+            </div>
           </CardContent>
         </Card>
       </div>
