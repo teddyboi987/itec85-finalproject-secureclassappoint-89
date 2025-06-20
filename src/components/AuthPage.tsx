@@ -53,7 +53,7 @@ const AuthPage: React.FC = () => {
     if (error) {
       setError(error.message);
     } else {
-      setMessage('If this is your first time signing in with Google, please check your email for verification.');
+      setMessage('Please check your email for verification. All users must verify their email before accessing the system.');
     }
   };
 
@@ -195,6 +195,17 @@ const AuthPage: React.FC = () => {
                     Professor accounts cannot be created here. Please use "Sign In" instead.
                   </p>
                 )}
+              </div>
+              
+              {/* Email verification notice for all Google users */}
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm">
+                <div className="flex items-start space-x-2">
+                  <Mail className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <p className="text-amber-700">
+                    <strong>Security Notice:</strong> All users must verify their email address for security purposes. 
+                    Please check your email after signing in.
+                  </p>
+                </div>
               </div>
               
               {/* Email verification notice for new users */}
