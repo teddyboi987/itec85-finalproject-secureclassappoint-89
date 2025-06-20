@@ -32,7 +32,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
     try {
       setIsLoading(true);
-      console.log('Fetching appointments for professor subject:', professorSubject);
+      console.log('🔍 Fetching appointments for professor subject:', professorSubject);
       
       const { data, error } = await supabase
         .from('appointments')
@@ -43,7 +43,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching appointments:', error);
+        console.error('❌ Error fetching appointments:', error);
         toast({
           title: "Error",
           description: "Failed to fetch appointments",
@@ -53,57 +53,72 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         return;
       }
 
-      console.log('Raw appointments from database:', data);
+      console.log('📊 Raw appointments from database:', data);
       
       if (!data || data.length === 0) {
-        console.log('No appointments found in database');
+        console.log('📭 No appointments found in database');
         setAppointments([]);
         return;
       }
 
-      // Log each appointment's subject for debugging
-      data.forEach((appointment, index) => {
-        console.log(`Appointment ${index + 1}:`, {
-          id: appointment.id,
-          subject: appointment.subject,
-          status: appointment.status,
-          student_name: appointment.student_profile?.name
-        });
-      });
-
-      // Enhanced filtering logic
+      // Enhanced filtering logic with multiple strategies
       const filteredAppointments = data.filter(appointment => {
-        const appointmentSubject = appointment.subject?.toLowerCase() || '';
-        const professorSubjectLower = professorSubject.toLowerCase();
+        const appointmentSubject = appointment.subject?.toLowerCase().trim() || '';
+        const professorSubjectLower = professorSubject.toLowerCase().trim();
         
-        console.log(`\n--- Filtering appointment ---`);
-        console.log(`Appointment subject: "${appointment.subject}"`);
-        console.log(`Professor subject: "${professorSubject}"`);
-        console.log(`Appointment subject (lowercase): "${appointmentSubject}"`);
-        console.log(`Professor subject (lowercase): "${professorSubjectLower}"`);
+        console.log(`\n🔎 Filtering appointment ID: ${appointment.id}`);
+        console.log(`   📝 Appointment subject: "${appointment.subject}"`);
+        console.log(`   👨‍🏫 Professor subject: "${professorSubject}"`);
         
-        // Check multiple matching strategies
+        // Strategy 1: Exact match
         const exactMatch = appointmentSubject === professorSubjectLower;
-        const contains = appointmentSubject.includes(professorSubjectLower);
-        const startsWith = appointmentSubject.startsWith(professorSubjectLower);
+        console.log(`   ✅ Exact match: ${exactMatch}`);
         
-        console.log(`Exact match: ${exactMatch}`);
-        console.log(`Contains: ${contains}`);
-        console.log(`Starts with: ${startsWith}`);
+        // Strategy 2: Professor subject is contained in appointment subject
+        const professorInAppointment = appointmentSubject.includes(professorSubjectLower);
+        console.log(`   📍 Professor subject in appointment: ${professorInAppointment}`);
         
-        const matches = exactMatch || contains || startsWith;
-        console.log(`Final match result: ${matches}`);
-        console.log(`--- End filtering ---\n`);
+        // Strategy 3: Appointment subject is contained in professor subject
+        const appointmentInProfessor = professorSubjectLower.includes(appointmentSubject);
+        console.log(`   📍 Appointment subject in professor: ${appointmentInProfessor}`);
+        
+        // Strategy 4: Check if they share common keywords (for cases like "CS" vs "Computer Science")
+        const professorWords = professorSubjectLower.split(/\s+/).filter(word => word.length > 2);
+        const appointmentWords = appointmentSubject.split(/\s+/).filter(word => word.length > 2);
+        const commonWords = professorWords.some(pWord => 
+          appointmentWords.some(aWord => aWord.includes(pWord) || pWord.includes(aWord))
+        );
+        console.log(`   🔗 Common words match: ${commonWords}`);
+        console.log(`   📝 Professor words: [${professorWords.join(', ')}]`);
+        console.log(`   📝 Appointment words: [${appointmentWords.join(', ')}]`);
+        
+        const matches = exactMatch || professorInAppointment || appointmentInProfessor || commonWords;
+        console.log(`   🎯 Final match result: ${matches}`);
         
         return matches;
       });
 
-      console.log('Filtered appointments for professor:', filteredAppointments);
-      console.log(`Total appointments: ${data.length}, Filtered: ${filteredAppointments.length}`);
+      console.log('🎯 FILTERING RESULTS:');
+      console.log(`   📊 Total appointments in DB: ${data.length}`);
+      console.log(`   ✅ Filtered appointments: ${filteredAppointments.length}`);
+      console.log('   📋 Filtered appointment IDs:', filteredAppointments.map(a => a.id));
+      
+      if (filteredAppointments.length > 0) {
+        console.log('📝 Filtered appointments details:');
+        filteredAppointments.forEach((apt, index) => {
+          console.log(`   ${index + 1}. Subject: "${apt.subject}", Status: "${apt.status}", Student: "${apt.student_profile?.name || 'Unknown'}"`);
+        });
+      } else {
+        console.log('⚠️ NO APPOINTMENTS MATCHED THE FILTER CRITERIA');
+        console.log('   🔍 All subjects in database:');
+        data.forEach((apt, index) => {
+          console.log(`   ${index + 1}. "${apt.subject}"`);
+        });
+      }
       
       setAppointments(filteredAppointments);
     } catch (err) {
-      console.error('Unexpected error fetching appointments:', err);
+      console.error('💥 Unexpected error fetching appointments:', err);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
@@ -117,7 +132,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
   const updateAppointmentStatus = async (appointmentId: string, status: 'approved' | 'rejected') => {
     try {
-      console.log(`Updating appointment ${appointmentId} status to:`, status);
+      console.log(`🔄 Updating appointment ${appointmentId} status to:`, status);
       
       const { error } = await supabase
         .from('appointments')
@@ -125,7 +140,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         .eq('id', appointmentId);
 
       if (error) {
-        console.error('Error updating appointment:', error);
+        console.error('❌ Error updating appointment:', error);
         toast({
           title: "Error",
           description: `Failed to ${status} appointment`,
@@ -149,7 +164,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
       });
       return true;
     } catch (err) {
-      console.error('Unexpected error updating appointment:', err);
+      console.error('💥 Unexpected error updating appointment:', err);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
@@ -162,11 +177,11 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
   // Set up real-time subscription and initial fetch
   useEffect(() => {
     if (!professorSubject) {
-      console.log('No professor subject, skipping subscription setup');
+      console.log('⚠️ No professor subject, skipping subscription setup');
       return;
     }
 
-    console.log('Setting up professor appointments subscription for subject:', professorSubject);
+    console.log('🔄 Setting up professor appointments subscription for subject:', professorSubject);
     
     // Initial fetch
     fetchAppointments();
@@ -182,7 +197,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
           table: 'appointments'
         },
         (payload) => {
-          console.log('Real-time appointment change detected:', payload);
+          console.log('🔄 Real-time appointment change detected:', payload);
           // Refetch appointments to ensure filtering is applied correctly
           fetchAppointments();
         }
@@ -190,7 +205,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
       .subscribe();
 
     return () => {
-      console.log('Cleaning up professor appointments subscription');
+      console.log('🧹 Cleaning up professor appointments subscription');
       supabase.removeChannel(channel);
     };
   }, [professorSubject]);

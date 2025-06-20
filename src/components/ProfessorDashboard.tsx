@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { BookOpen } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -22,13 +23,15 @@ const ProfessorDashboard: React.FC = () => {
   const professorSubject = profile?.subject || '';
   const pendingAppointments = appointments.filter(a => a.status === 'pending');
 
-  console.log('=== PROFESSOR DASHBOARD DEBUG ===');
-  console.log('Profile:', profile);
-  console.log('Professor subject:', professorSubject);
-  console.log('All appointments:', appointments);
-  console.log('Pending appointments:', pendingAppointments);
-  console.log('Is loading:', isLoading);
-  console.log('=== END PROFESSOR DASHBOARD DEBUG ===');
+  console.log('🏛️ === PROFESSOR DASHBOARD DEBUG ===');
+  console.log('👤 Profile:', profile);
+  console.log('📚 Professor subject:', professorSubject);
+  console.log('📊 All appointments count:', appointments.length);
+  console.log('⏳ Pending appointments count:', pendingAppointments.length);
+  console.log('⚡ Is loading:', isLoading);
+  console.log('📋 All appointments:', appointments);
+  console.log('⏳ Pending appointments:', pendingAppointments);
+  console.log('🏛️ === END PROFESSOR DASHBOARD DEBUG ===');
 
   if (isLoading) {
     return (
@@ -69,10 +72,22 @@ const ProfessorDashboard: React.FC = () => {
             Subject: <span className="font-semibold text-primary">{professorSubject}</span> | 
             Manage your student consultations
           </p>
-          <div className="text-xs text-muted-foreground mt-1 space-y-1">
-            <p>Debug: Found {appointments.length} total appointments, {pendingAppointments.length} pending</p>
-            <p>Profile loaded: {profile ? 'Yes' : 'No'}</p>
-            <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
+          <div className="text-xs text-muted-foreground mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="font-semibold text-blue-800 mb-1">🔍 Debug Information:</p>
+            <p>📊 Found {appointments.length} total appointments, {pendingAppointments.length} pending</p>
+            <p>👤 Profile loaded: {profile ? 'Yes' : 'No'}</p>
+            <p>⚡ Loading: {isLoading ? 'Yes' : 'No'}</p>
+            <p>📚 Looking for appointments matching subject: "{professorSubject}"</p>
+            {appointments.length > 0 && (
+              <div className="mt-2">
+                <p className="font-semibold text-blue-700">📋 Found appointments:</p>
+                {appointments.map((apt, i) => (
+                  <p key={apt.id} className="ml-2 text-blue-600">
+                    {i + 1}. Subject: "{apt.subject}" | Status: {apt.status} | Student: {apt.student_profile?.name || 'Unknown'}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
