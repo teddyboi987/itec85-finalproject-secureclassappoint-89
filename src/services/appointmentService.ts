@@ -18,29 +18,8 @@ export const fetchAppointments = async (): Promise<DatabaseAppointment[]> => {
     throw error;
   }
 
-  console.log('📊 Raw appointments from database:', data);
-  console.log('📊 Number of appointments fetched:', data?.length || 0);
-  
-  if (!data || data.length === 0) {
-    console.log('📭 No appointments found in database');
-    return [];
-  }
-
-  // Log each appointment's details
-  data.forEach((appointment, index) => {
-    console.log(`📋 Appointment ${index + 1}:`, {
-      id: appointment.id,
-      subject: appointment.subject,
-      status: appointment.status,
-      student_id: appointment.student_id,
-      professor_id: appointment.professor_id,
-      date: appointment.date,
-      time: appointment.time,
-      student_name: appointment.student_profile?.name
-    });
-  });
-
-  return data;
+  console.log('📊 Fetched appointments:', data?.length || 0);
+  return data || [];
 };
 
 export const updateAppointmentStatus = async (

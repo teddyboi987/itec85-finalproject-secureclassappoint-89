@@ -15,7 +15,6 @@ const ProfessorDashboard: React.FC = () => {
   const handleAppointmentAction = async (appointmentId: string, action: 'approved' | 'rejected') => {
     const success = await updateAppointmentStatus(appointmentId, action);
     if (success) {
-      // Refresh appointments to ensure stats are updated
       refetchAppointments();
     }
   };
@@ -23,15 +22,11 @@ const ProfessorDashboard: React.FC = () => {
   const professorSubject = profile?.subject || '';
   const pendingAppointments = appointments.filter(a => a.status === 'pending');
 
-  console.log('🏛️ === PROFESSOR DASHBOARD DEBUG ===');
-  console.log('👤 Profile:', profile);
-  console.log('📚 Professor subject:', professorSubject);
-  console.log('📊 All appointments count:', appointments.length);
-  console.log('⏳ Pending appointments count:', pendingAppointments.length);
-  console.log('⚡ Is loading:', isLoading);
+  console.log('🏛️ PROFESSOR DASHBOARD:');
+  console.log('👤 Profile subject:', professorSubject);
+  console.log('📊 Total appointments:', appointments.length);
+  console.log('⏳ Pending appointments:', pendingAppointments.length);
   console.log('📋 All appointments:', appointments);
-  console.log('⏳ Pending appointments:', pendingAppointments);
-  console.log('🏛️ === END PROFESSOR DASHBOARD DEBUG ===');
 
   if (isLoading) {
     return (
@@ -72,22 +67,14 @@ const ProfessorDashboard: React.FC = () => {
             Subject: <span className="font-semibold text-primary">{professorSubject}</span> | 
             Manage your student consultations
           </p>
+          
+          {/* Simple Debug Info */}
           <div className="text-xs text-muted-foreground mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="font-semibold text-blue-800 mb-1">🔍 Debug Information:</p>
-            <p>📊 Found {appointments.length} total appointments, {pendingAppointments.length} pending</p>
-            <p>👤 Profile loaded: {profile ? 'Yes' : 'No'}</p>
-            <p>⚡ Loading: {isLoading ? 'Yes' : 'No'}</p>
-            <p>📚 Looking for appointments matching subject: "{professorSubject}"</p>
-            {appointments.length > 0 && (
-              <div className="mt-2">
-                <p className="font-semibold text-blue-700">📋 Found appointments:</p>
-                {appointments.map((apt, i) => (
-                  <p key={apt.id} className="ml-2 text-blue-600">
-                    {i + 1}. Subject: "{apt.subject}" | Status: {apt.status} | Student: {apt.student_profile?.name || 'Unknown'}
-                  </p>
-                ))}
-              </div>
-            )}
+            <p className="font-semibold text-blue-800 mb-1">📊 Dashboard Status:</p>
+            <p>✅ Total appointments found: {appointments.length}</p>
+            <p>⏳ Pending appointments: {pendingAppointments.length}</p>
+            <p>📚 Looking for subject: "{professorSubject}"</p>
+            <p>🔄 Loading: {isLoading ? 'Yes' : 'No'}</p>
           </div>
         </div>
 

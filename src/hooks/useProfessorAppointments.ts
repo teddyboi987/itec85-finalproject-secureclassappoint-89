@@ -3,17 +3,15 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { DatabaseAppointment, AppointmentStatus } from '@/types/appointment';
-import { filterAppointmentsBySubject } from '@/utils/appointmentFilters';
-import { fetchAppointments, updateAppointmentStatus as updateAppointmentStatusService } from '@/services/appointmentService';
 
 export const useProfessorAppointments = (professorSubject: string | undefined) => {
   const [appointments, setAppointments] = useState<DatabaseAppointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchAndFilterAppointments = async () => {
+  const fetchAppointments = async () => {
     if (!professorSubject) {
-      console.log('⚠️ No professor subject provided, skipping fetch');
+      console.log('❌ No professor subject provided');
       setAppointments([]);
       setIsLoading(false);
       return;
@@ -21,17 +19,49 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
     try {
       setIsLoading(true);
-      console.log(`🔄 Starting to fetch appointments for professor subject: "${professorSubject}"`);
+      console.log(`🔄 Fetching appointments for subject: "${professorSubject}"`);
       
-      const allAppointments = await fetchAppointments();
-      console.log(`📊 Total appointments fetched from database: ${allAppointments.length}`);
+      // Simple query - get ALL appointments and filter client-side
+      const { data, error } = await supabase
+        .from('appointments')
+        .select(`
+          *,
+          student_profile:profiles!appointments_student_id_fkey(name)
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('❌ Error fetching appointments:', error);
+        throw error;
+      }
+
+      console.log('📊 Raw appointments from database:', data);
       
-      const filteredAppointments = filterAppointmentsBySubject(allAppointments, professorSubject);
-      console.log(`✅ Filtered appointments for professor: ${filteredAppointments.length}`);
-      
+      if (!data || data.length === 0) {
+        console.log('📭 No appointments found in database');
+        setAppointments([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Simple filtering - just check if appointment subject matches professor subject
+      const filteredAppointments = data.filter(appointment => {
+        const appointmentSubject = appointment.subject?.toLowerCase().trim() || '';
+        const profSubject = professorSubject.toLowerCase().trim();
+        
+        console.log(`🔍 Checking: "${appointmentSubject}" vs "${profSubject}"`);
+        
+        // Simple exact match
+        const matches = appointmentSubject === profSubject;
+        console.log(`✅ Match result: ${matches}`);
+        
+        return matches;
+      });
+
+      console.log(`🎯 Found ${filteredAppointments.length} matching appointments out of ${data.length} total`);
       setAppointments(filteredAppointments);
     } catch (err) {
-      console.error('💥 Error in fetchAndFilterAppointments:', err);
+      console.error('💥 Error fetching appointments:', err);
       toast({
         title: "Error",
         description: "Failed to fetch appointments",
@@ -45,9 +75,19 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
 
   const updateAppointmentStatus = async (appointmentId: string, status: AppointmentStatus) => {
     try {
-      await updateAppointmentStatusService(appointmentId, status);
+      console.log(`🔄 Updating appointment ${appointmentId} to ${status}`);
+      
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status })
+        .eq('id', appointmentId);
 
-      // Update local state immediately for instant UI feedback
+      if (error) {
+        console.error('❌ Error updating appointment:', error);
+        throw error;
+      }
+
+      // Update local state
       setAppointments(prev =>
         prev.map(appointment =>
           appointment.id === appointmentId
@@ -60,9 +100,10 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         title: "Success",
         description: `Appointment ${status} successfully`,
       });
+      
       return true;
     } catch (err) {
-      console.error('💥 Error updating appointment status:', err);
+      console.error('💥 Error updating appointment:', err);
       toast({
         title: "Error",
         description: `Failed to ${status} appointment`,
@@ -72,23 +113,21 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
     }
   };
 
-  // Set up real-time subscription and initial fetch
   useEffect(() => {
+    console.log(`🚀 Setting up appointments for professor subject: "${professorSubject}"`);
+    
     if (!professorSubject) {
-      console.log('⚠️ No professor subject, skipping subscription setup');
       setAppointments([]);
       setIsLoading(false);
       return;
     }
 
-    console.log(`🔄 Setting up professor appointments hook for subject: "${professorSubject}"`);
-    
     // Initial fetch
-    fetchAndFilterAppointments();
+    fetchAppointments();
 
-    // Set up real-time subscription for all appointment changes
+    // Set up real-time subscription
     const channel = supabase
-      .channel('professor-appointments-changes')
+      .channel('professor-appointments')
       .on(
         'postgres_changes',
         {
@@ -97,15 +136,14 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
           table: 'appointments'
         },
         (payload) => {
-          console.log('🔄 Real-time appointment change detected:', payload);
-          // Refetch appointments to ensure filtering is applied correctly
-          fetchAndFilterAppointments();
+          console.log('🔄 Real-time change detected:', payload);
+          fetchAppointments();
         }
       )
       .subscribe();
 
     return () => {
-      console.log('🧹 Cleaning up professor appointments subscription');
+      console.log('🧹 Cleaning up subscription');
       supabase.removeChannel(channel);
     };
   }, [professorSubject]);
@@ -114,6 +152,6 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
     appointments,
     isLoading,
     updateAppointmentStatus,
-    refetchAppointments: fetchAndFilterAppointments
+    refetchAppointments: fetchAppointments
   };
 };
