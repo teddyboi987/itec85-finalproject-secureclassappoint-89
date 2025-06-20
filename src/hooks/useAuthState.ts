@@ -36,11 +36,16 @@ export const useAuthState = () => {
         
         if (session?.user) {
           console.log('Fetching profile for user:', session.user.id);
-          const profileData = await profileService.fetchProfile(session.user.id);
-          if (mounted) {
-            console.log('Profile data:', profileData);
-            setProfile(profileData);
-          }
+          // Use setTimeout to prevent blocking
+          setTimeout(async () => {
+            if (mounted) {
+              const profileData = await profileService.fetchProfile(session.user.id);
+              if (mounted) {
+                console.log('Profile data:', profileData);
+                setProfile(profileData);
+              }
+            }
+          }, 0);
         }
         
         if (mounted) {
@@ -104,7 +109,7 @@ export const useAuthState = () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [profile]); // Remove profile from dependency to prevent loops
+  }, []); // Remove profile dependency to prevent loops
 
   return {
     user,

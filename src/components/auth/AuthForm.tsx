@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Mail } from 'lucide-react';
+import { Mail, RefreshCw } from 'lucide-react';
 
 interface AuthFormProps {
   isLogin: boolean;
@@ -15,11 +15,13 @@ interface AuthFormProps {
   message: string;
   isLoading: boolean;
   isProfessorEmail: boolean;
+  pendingVerification?: boolean;
   onEmailChange: (email: string) => void;
   onPasswordChange: (password: string) => void;
   onNameChange: (name: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onToggleMode: () => void;
+  onResendConfirmation?: () => void;
 }
 
 const AuthForm: React.FC<AuthFormProps> = ({
@@ -31,11 +33,13 @@ const AuthForm: React.FC<AuthFormProps> = ({
   message,
   isLoading,
   isProfessorEmail,
+  pendingVerification = false,
   onEmailChange,
   onPasswordChange,
   onNameChange,
   onSubmit,
-  onToggleMode
+  onToggleMode,
+  onResendConfirmation
 }) => {
   return (
     <form onSubmit={onSubmit} className="space-y-4">
@@ -49,6 +53,24 @@ const AuthForm: React.FC<AuthFormProps> = ({
         <Alert>
           <Mail className="h-4 w-4" />
           <AlertDescription>{message}</AlertDescription>
+        </Alert>
+      )}
+
+      {pendingVerification && onResendConfirmation && (
+        <Alert>
+          <RefreshCw className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>Didn't receive the confirmation email?</span>
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              onClick={onResendConfirmation}
+              className="h-auto p-0 text-primary hover:text-primary/80"
+            >
+              Resend
+            </Button>
+          </AlertDescription>
         </Alert>
       )}
 

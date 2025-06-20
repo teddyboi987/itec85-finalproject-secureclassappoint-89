@@ -14,6 +14,7 @@ const AuthPage: React.FC = () => {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const [pendingVerification, setPendingVerification] = useState(false);
   const { signIn, signUp, signInWithGoogle, isLoading } = useSupabaseAuth();
 
   // Check for email confirmation on component mount
@@ -24,6 +25,8 @@ const AuthPage: React.FC = () => {
     
     if (type === 'signup' && token_hash) {
       setMessage('Email confirmed successfully! You can now sign in with your credentials.');
+      setIsLogin(true); // Switch to login mode
+      setPendingVerification(false);
       // Clear URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
     }
@@ -40,12 +43,11 @@ const AuthPage: React.FC = () => {
       const { error } = await signIn(email, password);
       if (error) {
         console.error('Login error:', error);
-        if (error.message.includes('Email not confirmed')) {
-          setError('Please check your email and click the confirmation link before signing in.');
-        } else if (error.message.includes('Invalid login credentials')) {
-          setError('Invalid email or password. Please check your credentials and try again.');
-        } else {
-          setError(error.message);
+        setError(error.message);
+        
+        // If email not confirmed, show option to resend
+        if (error.message.includes('confirmation') || error.message.includes('verify')) {
+          setPendingVerification(true);
         }
       }
     } else {
@@ -59,15 +61,39 @@ const AuthPage: React.FC = () => {
       const { data, error } = await signUp(email, password, name);
       if (error) {
         console.error('Signup error:', error);
-        setError(error.message);
+        if (error.message.includes('User already registered')) {
+          setError('An account with this email already exists. Please try signing in instead.');
+          setIsLogin(true);
+        } else {
+          setError(error.message);
+        }
       } else {
         console.log('Signup successful, showing verification message');
         setMessage('Account created successfully! Please check your email for a confirmation link. You must click the link to verify your account before you can sign in.');
+        setPendingVerification(true);
         // Clear form after successful signup
-        setEmail('');
         setPassword('');
         setName('');
       }
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      setError('Please enter your email address');
+      return;
+    }
+    
+    setError('');
+    setMessage('');
+    
+    const { authService } = await import('@/services/authService');
+    const { error } = await authService.resendConfirmation(email);
+    
+    if (error) {
+      setError('Failed to resend confirmation email. Please try again.');
+    } else {
+      setMessage('Confirmation email sent! Please check your inbox and click the verification link.');
     }
   };
 
@@ -86,6 +112,7 @@ const AuthPage: React.FC = () => {
     setIsLogin(!isLogin);
     setError('');
     setMessage('');
+    setPendingVerification(false);
     console.log('Toggled auth mode to:', !isLogin ? 'login' : 'signup');
   };
 
@@ -125,11 +152,13 @@ const AuthPage: React.FC = () => {
                 message={message}
                 isLoading={isLoading}
                 isProfessorEmail={isProfessorEmail}
+                pendingVerification={pendingVerification}
                 onEmailChange={setEmail}
                 onPasswordChange={setPassword}
                 onNameChange={setName}
                 onSubmit={handleSubmit}
                 onToggleMode={handleToggleMode}
+                onResendConfirmation={handleResendConfirmation}
               />
             </div>
           </CardContent>

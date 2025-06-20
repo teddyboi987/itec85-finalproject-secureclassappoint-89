@@ -22,19 +22,10 @@ export const authService = {
     
     if (error) {
       console.error('Signup error:', error);
-      if (error.message.includes('User already registered') || 
-          error.message.includes('duplicate key') ||
-          error.message.includes('already been registered')) {
-        return { 
-          data: null,
-          error: { 
-            message: 'An account with this email already exists. Please try signing in instead.' 
-          } 
-        };
-      }
       return { data: null, error };
     }
     
+    // Return both data and error for proper handling
     return { data, error: null };
   },
 
@@ -50,6 +41,21 @@ export const authService = {
     
     if (error) {
       console.error('Signin error:', error);
+      // Handle specific error cases
+      if (error.message.includes('Email not confirmed')) {
+        return { 
+          error: { 
+            message: 'Please check your email and click the confirmation link to verify your account before signing in.' 
+          } 
+        };
+      }
+      if (error.message.includes('Invalid login credentials')) {
+        return { 
+          error: { 
+            message: 'Invalid email or password. Please check your credentials and try again.' 
+          } 
+        };
+      }
     }
     
     return { error };
@@ -85,6 +91,25 @@ export const authService = {
     }
     
     return { error };
+  },
+
+  async resendConfirmation(email: string) {
+    console.log('Resending confirmation email to:', email);
+    
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`
+      }
+    });
+    
+    if (error) {
+      console.error('Resend confirmation error:', error);
+      return { error };
+    }
+    
+    return { error: null };
   },
 
   async signOut() {
