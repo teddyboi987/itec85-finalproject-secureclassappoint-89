@@ -16,7 +16,7 @@ export const useAuthState = () => {
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
         
         if (!mounted) return;
@@ -42,10 +42,13 @@ export const useAuthState = () => {
         } else if (event === 'TOKEN_REFRESHED') {
           console.log('Token refreshed');
           if (session?.user && !profile) {
-            const profileData = await profileService.fetchProfile(session.user.id);
-            if (mounted) {
-              setProfile(profileData);
-            }
+            setTimeout(async () => {
+              if (!mounted) return;
+              const profileData = await profileService.fetchProfile(session.user.id);
+              if (mounted) {
+                setProfile(profileData);
+              }
+            }, 0);
           }
           setIsLoading(false);
         } else {
