@@ -25,7 +25,6 @@ export const authService = {
       return { data: null, error };
     }
     
-    // Return both data and error for proper handling
     return { data, error: null };
   },
 
@@ -41,7 +40,6 @@ export const authService = {
     
     if (error) {
       console.error('Signin error:', error);
-      // Handle specific error cases
       if (error.message.includes('Email not confirmed')) {
         return { 
           error: { 
@@ -62,17 +60,15 @@ export const authService = {
   },
 
   async signInWithGoogle() {
-    const redirectUrl = `${window.location.origin}/`;
-    
-    console.log('Attempting Google sign in with redirect:', redirectUrl);
+    console.log('Initiating Google sign-in...');
     
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: redirectUrl,
+        redirectTo: `${window.location.origin}/`,
         queryParams: {
-          access_type: 'offline',  
-          prompt: 'consent'
+          access_type: 'offline',
+          prompt: 'select_account'
         }
       }
     });
@@ -81,16 +77,14 @@ export const authService = {
     
     if (error) {
       console.error('Google signin error:', error);
-      if (error.message.includes('provider is not enabled')) {
-        return { 
-          error: { 
-            message: 'Google sign-in is not enabled. Please contact the administrator or use email/password instead.' 
-          } 
-        };
-      }
+      return { 
+        error: { 
+          message: error.message || 'Google sign-in failed. Please try again.' 
+        } 
+      };
     }
     
-    return { error };
+    return { error: null };
   },
 
   async resendConfirmation(email: string) {
@@ -114,6 +108,10 @@ export const authService = {
 
   async signOut() {
     console.log('Signing out user');
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Sign out error:', error);
+    }
+    return { error };
   }
 };

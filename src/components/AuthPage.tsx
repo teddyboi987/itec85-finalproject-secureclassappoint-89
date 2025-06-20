@@ -17,17 +17,27 @@ const AuthPage: React.FC = () => {
   const [pendingVerification, setPendingVerification] = useState(false);
   const { signIn, signUp, signInWithGoogle, isLoading } = useSupabaseAuth();
 
-  // Check for email confirmation on component mount
+  // Handle URL parameters on mount
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const type = urlParams.get('type');
     const token_hash = urlParams.get('token_hash');
+    const access_token = urlParams.get('access_token');
+    const refresh_token = urlParams.get('refresh_token');
+    
+    console.log('URL params:', { type, token_hash, access_token: !!access_token, refresh_token: !!refresh_token });
     
     if (type === 'signup' && token_hash) {
       setMessage('Email confirmed successfully! You can now sign in with your credentials.');
-      setIsLogin(true); // Switch to login mode
+      setIsLogin(true);
       setPendingVerification(false);
       // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+    
+    // For OAuth redirects, clear the URL parameters
+    if (access_token || refresh_token) {
+      console.log('OAuth redirect detected, clearing URL parameters');
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
@@ -45,7 +55,6 @@ const AuthPage: React.FC = () => {
         console.error('Login error:', error);
         setError(error.message);
         
-        // If email not confirmed, show option to resend
         if (error.message.includes('confirmation') || error.message.includes('verify')) {
           setPendingVerification(true);
         }
@@ -71,7 +80,6 @@ const AuthPage: React.FC = () => {
         console.log('Signup successful, showing verification message');
         setMessage('Account created successfully! Please check your email for a confirmation link. You must click the link to verify your account before you can sign in.');
         setPendingVerification(true);
-        // Clear form after successful signup
         setPassword('');
         setName('');
       }
@@ -100,11 +108,19 @@ const AuthPage: React.FC = () => {
   const handleGoogleSignIn = async () => {
     setError('');
     setMessage('');
-    console.log('Google sign in initiated');
-    const { error } = await signInWithGoogle();
-    if (error) {
-      console.error('Google signin error:', error);
-      setError(error.message);
+    console.log('Google sign in button clicked');
+    
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        console.error('Google signin error:', error);
+        setError(error.message || 'Google sign-in failed. Please try again.');
+      } else {
+        console.log('Google sign-in initiated successfully');
+      }
+    } catch (err) {
+      console.error('Unexpected error during Google sign-in:', err);
+      setError('An unexpected error occurred. Please try again.');
     }
   };
 
@@ -116,7 +132,6 @@ const AuthPage: React.FC = () => {
     console.log('Toggled auth mode to:', !isLogin ? 'login' : 'signup');
   };
 
-  // Check if it's a professor email to show appropriate messaging
   const isProfessorEmail = email.includes('@cvsu.edu.ph') && email !== 'admin@cvsu.edu.ph';
 
   return (
