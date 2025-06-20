@@ -57,14 +57,12 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
       // Filter appointments that match the professor's subject
       const filteredAppointments = data?.filter(appointment => {
         // Check if the subject string contains the professor's subject
-        // This handles cases like "Mathematics (Prof. Dr. John Smith)" containing "Mathematics"
         const appointmentSubject = appointment.subject.toLowerCase();
         const professorSubjectLower = professorSubject.toLowerCase();
         
-        // Check exact match first, then check if appointment subject starts with professor subject
-        const matches = appointmentSubject === professorSubjectLower || 
-                       appointmentSubject.startsWith(professorSubjectLower + ' ') ||
-                       appointmentSubject.includes(professorSubjectLower);
+        // More flexible matching: check if appointment subject contains professor subject
+        const matches = appointmentSubject.includes(professorSubjectLower) || 
+                       appointmentSubject.startsWith(professorSubjectLower);
         
         console.log(`Filtering: "${appointment.subject}" for professor subject "${professorSubject}": ${matches}`);
         return matches;

@@ -38,8 +38,28 @@ const PendingAppointments: React.FC<PendingAppointmentsProps> = ({
     }
   };
 
+  console.log('PendingAppointments - Rendering with appointments:', pendingAppointments);
+
   if (pendingAppointments.length === 0) {
-    return null;
+    return (
+      <Card className="cvsu-card mb-6 bg-white/90 backdrop-blur-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2 text-primary">
+            <AlertCircle className="h-5 w-5 text-green-600" />
+            <span>Consultation Requests for {professorSubject}</span>
+          </CardTitle>
+          <CardDescription>Review and respond to student consultation requests</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <AlertCircle className="h-12 w-12 text-primary/40 mx-auto mb-4" />
+            <p className="text-muted-foreground">
+              No pending consultation requests at the moment.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
@@ -84,7 +104,7 @@ const PendingAppointments: React.FC<PendingAppointmentsProps> = ({
                     className="bg-green-600 hover:bg-green-700 text-white"
                   >
                     <CheckCircle className="h-4 w-4 mr-1" />
-                    Schedule
+                    Approve
                   </Button>
                   <Button
                     size="sm"
@@ -92,7 +112,7 @@ const PendingAppointments: React.FC<PendingAppointmentsProps> = ({
                     onClick={() => onAppointmentAction(appointment.id, 'rejected')}
                   >
                     <XCircle className="h-4 w-4 mr-1" />
-                    Decline
+                    Reject
                   </Button>
                 </div>
               </div>

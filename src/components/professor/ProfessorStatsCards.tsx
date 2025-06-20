@@ -22,10 +22,19 @@ interface ProfessorStatsCardsProps {
 }
 
 const ProfessorStatsCards: React.FC<ProfessorStatsCardsProps> = ({ appointments }) => {
+  console.log('ProfessorStatsCards - Computing stats for appointments:', appointments);
+  
   const totalConsultations = appointments.length;
   const awaitingReview = appointments.filter(a => a.status === 'pending').length;
   const scheduled = appointments.filter(a => a.status === 'approved').length;
   const declined = appointments.filter(a => a.status === 'rejected').length;
+
+  console.log('ProfessorStatsCards - Stats computed:', {
+    total: totalConsultations,
+    pending: awaitingReview,
+    approved: scheduled,
+    rejected: declined
+  });
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
