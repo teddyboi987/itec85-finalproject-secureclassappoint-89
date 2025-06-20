@@ -1,24 +1,9 @@
-
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { User, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 
-interface DatabaseAppointment {
-  id: string;
-  student_id: string;
-  professor_id: string;
-  subject: string;
-  date: string;
-  time: string;
-  status: string;
-  created_at: string;
-  student_profile?: {
-    name: string;
-  };
-}
-
 interface ProfessorStatsCardsProps {
-  appointments: DatabaseAppointment[];
+  appointments: import('@/types/appointment').DatabaseAppointment[];
 }
 
 const ProfessorStatsCards: React.FC<ProfessorStatsCardsProps> = ({ appointments }) => {

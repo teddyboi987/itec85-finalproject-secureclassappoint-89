@@ -20,7 +20,7 @@ interface DatabaseAppointment {
 }
 
 interface PendingAppointmentsProps {
-  pendingAppointments: DatabaseAppointment[];
+  pendingAppointments: import('@/types/appointment').DatabaseAppointment[];
   professorSubject: string;
   onAppointmentAction: (appointmentId: string, action: 'approved' | 'rejected') => void;
 }

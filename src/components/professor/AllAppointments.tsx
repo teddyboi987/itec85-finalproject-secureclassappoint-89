@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,7 @@ interface DatabaseAppointment {
 }
 
 interface AllAppointmentsProps {
-  appointments: DatabaseAppointment[];
+  appointments: import('@/types/appointment').DatabaseAppointment[];
   professorSubject: string;
   onAppointmentAction: (appointmentId: string, action: 'approved' | 'rejected') => void;
 }
