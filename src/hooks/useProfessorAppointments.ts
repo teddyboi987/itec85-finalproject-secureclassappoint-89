@@ -20,7 +20,7 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         return;
       }
 
-      // Query all appointments first, then filter
+      // Query all appointments first to see what's actually in the database
       const { data, error } = await supabase
         .from('appointments')
         .select(`
@@ -42,12 +42,40 @@ export const useProfessorAppointments = (professorSubject: string | undefined) =
         return;
       }
 
-      // Filter appointments by subject (case insensitive)
+      // Log all subjects in the database for debugging
+      const allSubjects = data.map(apt => apt.subject);
+      console.log('📚 ALL SUBJECTS IN DB:', allSubjects);
+      console.log('🎯 LOOKING FOR SUBJECT:', professorSubject);
+
+      // Try multiple matching strategies
       const filteredAppointments = data.filter(appointment => {
-        const appointmentSubject = appointment.subject?.toLowerCase().trim();
-        const profSubject = professorSubject.toLowerCase().trim();
-        console.log('🔍 Comparing:', appointmentSubject, 'vs', profSubject);
-        return appointmentSubject === profSubject;
+        const appointmentSubject = appointment.subject;
+        const profSubject = professorSubject;
+        
+        console.log('🔍 EXACT COMPARISON:');
+        console.log('  Appointment subject:', `"${appointmentSubject}"`);
+        console.log('  Professor subject:', `"${profSubject}"`);
+        console.log('  Exact match:', appointmentSubject === profSubject);
+        
+        // Try exact match first
+        if (appointmentSubject === profSubject) {
+          return true;
+        }
+        
+        // Try case-insensitive match
+        const lowerAppointment = appointmentSubject?.toLowerCase().trim();
+        const lowerProf = profSubject?.toLowerCase().trim();
+        console.log('  Case-insensitive match:', lowerAppointment === lowerProf);
+        
+        if (lowerAppointment === lowerProf) {
+          return true;
+        }
+        
+        // Try partial match (contains)
+        const partialMatch = lowerAppointment?.includes(lowerProf) || lowerProf?.includes(lowerAppointment);
+        console.log('  Partial match:', partialMatch);
+        
+        return partialMatch;
       });
 
       console.log('✅ FILTERED APPOINTMENTS:', filteredAppointments);

@@ -63,9 +63,6 @@ const ProfessorDashboard: React.FC = () => {
             Subject: <span className="font-semibold text-primary">{professorSubject}</span> | 
             Manage your student consultations
           </p>
-          <div className="mt-2 p-2 bg-blue-50 rounded text-sm text-blue-700">
-            Debug: Found {appointments.length} appointments for "{professorSubject}"
-          </div>
         </div>
 
         <ProfessorStatsCards appointments={appointments} />
