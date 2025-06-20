@@ -14,6 +14,46 @@ export const useAuthState = () => {
   useEffect(() => {
     let mounted = true;
 
+    // Check for existing session first
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          if (mounted) {
+            setIsLoading(false);
+          }
+          return;
+        }
+
+        if (!mounted) return;
+        
+        console.log('Initial session check:', session?.user?.email);
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          console.log('Fetching profile for user:', session.user.id);
+          const profileData = await profileService.fetchProfile(session.user.id);
+          if (mounted) {
+            console.log('Profile data:', profileData);
+            setProfile(profileData);
+          }
+        }
+        
+        if (mounted) {
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -26,15 +66,15 @@ export const useAuthState = () => {
         
         if (event === 'SIGNED_IN' && session?.user) {
           console.log('User signed in, fetching profile');
-          // Fetch profile with delay to ensure trigger completion
           setTimeout(async () => {
             if (!mounted) return;
             const profileData = await profileService.fetchProfile(session.user.id);
             if (mounted) {
+              console.log('Profile fetched after signin:', profileData);
               setProfile(profileData);
               setIsLoading(false);
             }
-          }, 500);
+          }, 100);
         } else if (event === 'SIGNED_OUT') {
           console.log('User signed out');
           setProfile(null);
@@ -57,47 +97,14 @@ export const useAuthState = () => {
       }
     );
 
-    // Check for existing session
-    const initializeAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('Error getting session:', error);
-          setIsLoading(false);
-          return;
-        }
-
-        if (!mounted) return;
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          const profileData = await profileService.fetchProfile(session.user.id);
-          if (mounted) {
-            setProfile(profileData);
-          }
-        }
-        
-        if (mounted) {
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        if (mounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
+    // Initialize auth after setting up listener
     initializeAuth();
 
     return () => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [profile]); // Remove profile from dependency to prevent loops
 
   return {
     user,

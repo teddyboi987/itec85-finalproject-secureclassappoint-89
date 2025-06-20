@@ -1,20 +1,9 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export const authService = {
   async signUp(email: string, password: string, name: string) {
     const redirectUrl = `${window.location.origin}/`;
-    
-    // Check if it's a professor email
-    const isProfessor = email.includes('@cvsu.edu.ph') && email !== 'admin@cvsu.edu.ph';
-    
-    // For professors, we don't allow signup - they should use existing accounts
-    if (isProfessor) {
-      return { 
-        error: { 
-          message: 'Professor accounts are pre-created by admin. Please use the "Sign In" option with your provided credentials.' 
-        } 
-      };
-    }
     
     console.log('Attempting to sign up user:', email);
     
@@ -37,17 +26,13 @@ export const authService = {
           error.message.includes('duplicate key') ||
           error.message.includes('already been registered')) {
         return { 
+          data: null,
           error: { 
             message: 'An account with this email already exists. Please try signing in instead.' 
           } 
         };
       }
-      return { error };
-    }
-    
-    // If signup was successful, log the user creation
-    if (data.user && !data.user.email_confirmed_at) {
-      console.log('User created successfully, verification email sent to:', email);
+      return { data: null, error };
     }
     
     return { data, error: null };
@@ -61,7 +46,7 @@ export const authService = {
       password,
     });
     
-    console.log('Signin response:', { data, error });
+    console.log('Signin response:', { user: data?.user?.email, error });
     
     if (error) {
       console.error('Signin error:', error);
@@ -80,7 +65,7 @@ export const authService = {
       options: {
         redirectTo: redirectUrl,
         queryParams: {
-          access_type: 'offline',
+          access_type: 'offline',  
           prompt: 'consent'
         }
       }
